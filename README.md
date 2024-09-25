@@ -127,5 +127,4 @@ The **Online Quiz Portal** is a full-stack web application designed to allow use
    ```  
 6. Create a pull request
 
----
 
