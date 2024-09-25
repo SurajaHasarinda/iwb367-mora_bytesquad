@@ -1,0 +1,58 @@
+
+### Test Signup Endpoint
+POST http://localhost:8080/auth/signup1
+Content-Type: application/json
+
+{
+    "username": "testuser",
+    "password": "password123",
+    "role": "user"
+}
+
+### Test hashed Signup Endpoint
+POST http://localhost:8080/auth/signup2
+Content-Type: application/json
+
+{
+    "username": "suraja",
+    "password": "suraja2001",
+    "role": "user"
+}
+
+### Test hashed Signup Endpoint
+POST http://localhost:8080/auth/signup
+Content-Type: application/json
+
+{
+    "username": "Hasarinda",
+    "password": "sh2001"
+}
+
+### Test Login Endpoint
+POST http://localhost:8080/auth/login
+Content-Type: application/json
+
+{
+    "username": "Hasarinda",
+    "password": "sh2001"
+}
+
+
+### Get all scores all users
+GET http://localhost:8082/quizscore/scores
+
+### Get all scores of a specific quiz
+GET http://localhost:8082/quizscore/scores/quiz/1
+
+### Get all scores of a specific user
+GET http://localhost:8082/quizscore/scores/user/1
+
+### Get specific score of a specific user
+GET http://localhost:8082/quizscore/score/user/1/quiz/2
+
+### Get all users
+GET http://localhost:8080/auth/users
+
+### Get specific user
+GET http://localhost:8080/auth/user/1
+
