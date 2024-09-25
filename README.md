@@ -23,20 +23,6 @@ The **Online Quiz Portal** is a full-stack web application designed to allow use
 
 ## 🛠️ Technologies Used
 
-
-<div style="display: flex; align-items: center;">
-  <div style="background-color: white; padding: 5px; border-radius: 5px; margin-right: 10px;">
-    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nextjs/nextjs-original.svg" height="40" alt="nextjs logo" />
-  </div>
-  <div style="background-color: white; padding: 5px; border-radius: 5px; margin-right: 10px;">
-    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original-wordmark.svg" height="40" alt="mysql logo" />
-  </div>
-  <div style="background-color: white; padding: 5px; border-radius: 5px;">
-    <img src="https://avatars.githubusercontent.com/u/34733518?s=200&v=4" height="40" alt="ballerina logo" />
-  </div>
-</div>
-<br>
-
 - **Frontend**: Next.js (with TypeScript support)
 - **Backend**: Ballerina
 - **Database**: MySQL for storing user data, quizzes, questions, and scores
