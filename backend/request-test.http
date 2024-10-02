@@ -1,30 +1,10 @@
 
-### Test Signup Endpoint
-POST http://localhost:8080/auth/signup1
-Content-Type: application/json
-
-{
-    "username": "testuser",
-    "password": "password123",
-    "role": "user"
-}
-
-### Test hashed Signup Endpoint
-POST http://localhost:8080/auth/signup2
-Content-Type: application/json
-
-{
-    "username": "suraja",
-    "password": "suraja2001",
-    "role": "user"
-}
-
 ### Test hashed Signup Endpoint
 POST http://localhost:8080/auth/signup
 Content-Type: application/json
 
 {
-    "username": "Hasarinda",
+    "username": "Hasarinda3",
     "password": "sh2001"
 }
 
