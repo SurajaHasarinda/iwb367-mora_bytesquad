@@ -1,0 +1,13 @@
+.quiz-cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 100px;
+}
+
+.quiz-card:hover {
+    background-color: #e0e0e0; /* Change background color on hover */
+    cursor: pointer;
+    transform: scale(1.05); 
+    transition: 0.3s ease, transform 0.3s ease;
+}

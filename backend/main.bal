@@ -24,8 +24,9 @@ final mysql:Client dbClient = check new (...databaseConfig);
 
 listener http:Listener authListener = new (8080);
 
-// listener http:Listener quizListener = new (8081);
-// listener http:Listener scoreListener = new (8082);
+listener http:Listener quizListener = new (8081);
+
+listener http:Listener scoreListener = new (8082);
 
 //-------------------------------------------- Auth Service --------------------------------------------
 type User record {
@@ -59,7 +60,7 @@ service /auth on authListener {
 
     // get specific user
     resource function get user/[int Userid]() returns User|UserNotFound|error {
-        User|sql:Error user = dbClient->queryRow(`SELECT id, username FROM quiz_db.users WHERE id = ${Userid}`);
+        User|sql:Error user = dbClient->queryRow(`SELECT id, username FROM users WHERE id = ${Userid}`);
         if user is sql:NoRowsError {
             UserNotFound userNotFound = {
                 body: {message: string `id: ${Userid}`, details: string `user/${Userid}`, timeStamp: time:utcNow()}
@@ -92,9 +93,15 @@ service /auth on authListener {
         var result = dbClient->execute(query);
 
         if (result is sql:ExecutionResult && result.affectedRowCount > 0) {
-            check caller->respond({"message": "User registered successfully!"});
+            http:Response successResponse = new;
+            successResponse.statusCode = http:STATUS_CREATED; // 201 Created
+            successResponse.setPayload({"message": "User registered successfully!"});
+            check caller->respond(successResponse);
         } else {
-            check caller->respond({"message": "User registration failed!"});
+            http:Response conflictResponse = new;
+            conflictResponse.statusCode = http:STATUS_CONFLICT; // 409 Conflict
+            conflictResponse.setPayload({"message": "User already exists!"});
+            check caller->respond(conflictResponse);
         }
     }
 
@@ -130,23 +137,53 @@ service /auth on authListener {
 
             // Compare the provided hashed password with the stored hashed password
             if (hashedPassword == storedHashedPassword) {
-                check caller->respond({"message": "Login successful!"});
+                http:Response successResponse = new;
+                successResponse.statusCode = http:STATUS_OK; // 200 OK
+                successResponse.setPayload({"message": "Login successful!"});
+                check caller->respond(successResponse);
             } else {
-                check caller->respond({"message": "Invalid username or password!"});
+                http:Response invalidPasswordResponse = new;
+                invalidPasswordResponse.statusCode = http:STATUS_UNAUTHORIZED; // 401 Unauthorized
+                invalidPasswordResponse.setPayload({"message": "Invalid password!"});
+                check caller->respond(invalidPasswordResponse);
             }
 
         } else {
-            // Error occurred while executing the query
-            check caller->respond({"message": "Query failed!"});
+            http:Response userNotFoundResponse = new;
+            userNotFoundResponse.statusCode = http:STATUS_NOT_FOUND; // 404 Not Found
+            userNotFoundResponse.setPayload({"message": "User not found!"});
+            check caller->respond(userNotFoundResponse);
         }
     }
 }
 
 //-------------------------------------------- Quiz Service --------------------------------------------
 
-// service /quiz on quizListener {
+type QuizWithScore record {
+    readonly int quiz_id;
+    string quiz_title;
+    string|int score;
+};
 
-// }
+@http:ServiceConfig {
+    cors: {
+        allowOrigins: ["*"]
+    }
+}
+service /quiz on quizListener {
+
+    resource function get all/user/[int Userid]() returns QuizWithScore[]|error {
+        stream<QuizWithScore, sql:Error?> dataStream = dbClient->query(`SELECT quiz_id, quiz_title, score FROM user_quiz_data WHERE user_id = ${Userid}`);
+        QuizWithScore[] quizWithScore = [];
+        check from QuizWithScore data in dataStream
+            do {
+                quizWithScore.push(data);
+            };
+        check dataStream.close();
+        return quizWithScore;
+    }
+
+}
 
 //-------------------------------------------- Score Service --------------------------------------------
 
@@ -172,71 +209,78 @@ type ScoreNotFound record {|
     ErrorDetails body;
 |};
 
-// service /quizscore on scoreListener {
-//     // get all scores
-//     // ! for testing
-//     resource function get scores() returns Score[]|error {
-//         stream<Score, sql:Error?> scoreStream = dbClient->query(`SELECT * FROM quiz_db.scores`);
-//         Score[] scores = [];
-//         check from Score score in scoreStream
-//             do {
-//                 scores.push(score);
-//             };
-//         check scoreStream.close();
-//         return scores;
-//     }
 
-//     // get all scores of a specific user
-//     resource function get scores/user/[int Userid]() returns Score[]|error {
-//         stream<Score, sql:Error?> scoreStream = dbClient->query(`SELECT * FROM quiz_db.scores WHERE user_id = ${Userid}`);
-//         Score[] scores = [];
-//         check from Score score in scoreStream
-//             do {
-//                 scores.push(score);
-//             };
-//         check scoreStream.close();
-//         return scores;
-//     }
+@http:ServiceConfig {
+    cors: {
+        allowOrigins: ["*"]
+    }
+}
+service /quizscore on scoreListener {
+    // get all scores
+    // ! for testing
+    resource function get scores() returns Score[]|error {
+        stream<Score, sql:Error?> scoreStream = dbClient->query(`SELECT * FROM scores`);
+        Score[] scores = [];
+        check from Score score in scoreStream
+            do {
+                scores.push(score);
+            };
+        check scoreStream.close();
+        return scores;
+    }
 
-//     // get all scores of a specific quiz
-//     resource function get scores/quiz/[int Quizid]() returns Score[]|error {
-//         stream<Score, sql:Error?> scoreStream = dbClient->query(`SELECT * FROM quiz_db.scores WHERE quiz_id = ${Quizid}`);
-//         Score[] scores = [];
-//         check from Score score in scoreStream
-//             do {
-//                 scores.push(score);
-//             };
-//         check scoreStream.close();
-//         return scores;
-//     }
+    // get all scores of a specific user
+    resource function get scores/user/[int Userid]() returns Score[]|error {
+        stream<Score, sql:Error?> scoreStream = dbClient->query(`SELECT * FROM scores WHERE user_id = ${Userid}`);
+        Score[] scores = [];
+        check from Score score in scoreStream
+            do {
+                scores.push(score);
+            };
+        check scoreStream.close();
+        return scores;
+    }
 
-//     // get a specific score of a specific user
-//     resource function get score/user/[int Userid]/quiz/[int Quizid]() returns Score|ScoreNotFound|error {
-//         Score|error scores = dbClient->queryRow(`SELECT * FROM quiz_db.scores WHERE user_id = ${Userid} AND quiz_id = ${Quizid}`);
-//         if scores is sql:NoRowsError {
-//             ScoreNotFound scoreNotFound = {
-//                 body: {message: string `id: ${Userid}`, details: string `scores/user/${Userid}`, timeStamp: time:utcNow()}
-//             };
-//             return scoreNotFound;
-//         }
-//         return scores;
-//     }
+    // get all scores of a specific quiz
+    resource function get scores/quiz/[int Quizid]() returns Score[]|error {
+        stream<Score, sql:Error?> scoreStream = dbClient->query(`SELECT * FROM scores WHERE quiz_id = ${Quizid}`);
+        Score[] scores = [];
+        check from Score score in scoreStream
+            do {
+                scores.push(score);
+            };
+        check scoreStream.close();
+        return scores;
+    }
 
-// resource function get scores/user/[int Userid]() returns Score|ScoreNotFound|error {
-//     Score|error scores = dbClient->queryRow(`SELECT * FROM quiz_db.scores WHERE user_id = ${Userid}`);
-//     if scores is sql:NoRowsError {
-//         ScoreNotFound scoreNotFound = {
-//             body: {message: string `id: ${Userid}`, details: string `scores/user/${Userid}`, timeStamp: time:utcNow()}
-//         };
-//         return scoreNotFound;
-//     }
-//     return scores;
-// }
+    // get a specific score of a specific user
+    resource function get score/user/[int Userid]/quiz/[int Quizid]() returns Score|ScoreNotFound|error {
+        Score|error scores = dbClient->queryRow(`SELECT * FROM quiz_db.scores WHERE user_id = ${Userid} AND quiz_id = ${Quizid}`);
+        if scores is sql:NoRowsError {
+            ScoreNotFound scoreNotFound = {
+                body: {message: string `id: ${Userid}`, details: string `scores/user/${Userid}`, timeStamp: time:utcNow()}
+            };
+            return scoreNotFound;
+        }
+        return scores;
+    }
 
-// }
+    // resource function get scores/user/[int Userid]() returns Score|ScoreNotFound|error {
+    //     Score|error scores = dbClient->queryRow(`SELECT * FROM quiz_db.scores WHERE user_id = ${Userid}`);
 
-// function buildErrorPayload(string msg, string path) returns ErrorDetails => {
-//     message: msg,
-//     timeStamp: time:utcNow(),
-//     details: string `uri=${path}`
-// };
+    //     if scores is sql:NoRowsError {
+    //         ScoreNotFound scoreNotFound = {
+    //             body: {message: string `id: ${Userid}`, details: string `scores/user/${Userid}`, timeStamp: time:utcNow()}
+    //         };
+    //         return scoreNotFound;
+    //     }
+    //     return scores;
+    // }
+
+}
+
+function buildErrorPayload(string msg, string path) returns ErrorDetails => {
+    message: msg,
+    timeStamp: time:utcNow(),
+    details: string `uri=${path}`
+};
