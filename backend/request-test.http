@@ -19,6 +19,7 @@ Content-Type: application/json
     "role": "user"
 }
 
+
 ### Test hashed Signup Endpoint
 POST http://localhost:8080/auth/signup
 Content-Type: application/json
@@ -38,6 +39,19 @@ Content-Type: application/json
 }
 
 
+### Quiz service things-------------------------
+
+### Get all quizzes
+GET http://localhost:8081/quiz/quizzes
+
+### Get specific quiz
+
+GET http://localhost:8081/quiz/questions/1
+
+
+
+
+###------------------------------------------------------------
 ### Get all scores all users
 GET http://localhost:8082/quizscore/scores
 

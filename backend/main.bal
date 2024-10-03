@@ -4,7 +4,9 @@ import ballerinax/mysql.driver as _;
 import ballerina/http;
 import ballerina/sql;
 import ballerina/crypto;
-// import ballerina/log;
+
+
+ //import ballerina/log;
 // import ballerina/lang.regexp;
 
 // to cofingure the database
@@ -15,11 +17,11 @@ type DatabaseConfig record {|
     string password;
     string database;
 |};
-
 // get the database configuration from the Config.toml file
 configurable DatabaseConfig databaseConfig = ?;
 // create a new mysql client using the database configuration
 mysql:Client dbClient = check new (...databaseConfig);
+  
 
 listener http:Listener authListener = new(8080);
 listener http:Listener quizListener= new(8081);
@@ -182,8 +184,103 @@ service /auth on authListener {
 
 //-------------------------------------------- Quiz Service --------------------------------------------
 
+
+
+type Quiz record {|
+    readonly int id;
+    string title;
+|};
+
+type Option record {|
+    string option_text;
+|};
+
+type Question record {|
+    int id;
+    string question_text;
+|};
+
+// Extend the Question type to include options
+type QuestionWithOptions record {|
+    int id;
+    string question_text;
+    Option[] options; // Options related to the question
+|};
+
+
 service /quiz on quizListener {
     
+
+    resource function get quizzes() returns Quiz[]|error {
+        // Query to select all quizzes from the `quizzes` table
+        stream<Quiz, sql:Error?> quizStream = dbClient->query(`SELECT id, title FROM quiz_db.quizzes`);
+        
+        // Initialize an empty array to store the quizzes
+        Quiz[] quizzes = [];
+        
+        // Iterate over the quiz stream and collect all quizzes
+        check from Quiz quiz in quizStream
+            do {
+                quizzes.push(quiz);
+            };
+        
+        // Ensure that the stream is closed after fetching the data
+        check quizStream.close();
+        
+        // Return the list of quizzes
+        return quizzes;
+    
+    
+   
+    }
+   
+    
+    resource function get questions/[int Quizid]() returns QuestionWithOptions[]|error {
+    // Query to fetch questions for the given quizId
+    stream<Question, sql:Error?> questionStream = dbClient->query(
+        `SELECT id, question_text FROM quiz_db.questions WHERE quiz_id = ${Quizid}`
+    );
+
+    // Initialize an empty array to store the questions with options
+    QuestionWithOptions[] questionsWithOptions = [];
+
+    // Iterate over the question stream and collect all questions
+    check from Question question in questionStream
+        do {
+            // Fetch options for each question
+            stream<Option, sql:Error?> optionStream = dbClient->query(
+                `SELECT option_text FROM quiz_db.options WHERE question_id = ${question.id}`
+            );
+
+            // Initialize an empty array to store the options for the current question
+            Option[] options = [];
+
+            // Iterate over the option stream and collect options
+            check from Option opt in optionStream
+                do {
+                    options.push(opt);
+                };
+
+            // Close the option stream
+            check optionStream.close();
+
+            // Create a new QuestionWithOptions record and add it to the result
+            questionsWithOptions.push({
+                id: question.id,
+                question_text: question.question_text,
+                options: options
+            });
+        };
+
+    // Close the question stream
+    check questionStream.close();
+
+    // Return the list of questions along with their options
+    return questionsWithOptions;
+   
+    }
+
+
 }
 
 //-------------------------------------------- Score Service --------------------------------------------
