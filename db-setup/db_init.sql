@@ -26,7 +26,7 @@ CREATE TABLE quizzes (
 );
 
 CREATE TABLE questions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    question_id INT AUTO_INCREMENT PRIMARY KEY,
     quiz_id INT,
     question_text TEXT NOT NULL,
     correct_option INT NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE options (
     id INT AUTO_INCREMENT PRIMARY KEY,
     question_id INT,
     option_text TEXT NOT NULL,
-    FOREIGN KEY (question_id) REFERENCES questions(id)
+    FOREIGN KEY (question_id) REFERENCES questions(question_id)
 );
 
 CREATE TABLE scores (
@@ -115,7 +115,7 @@ INSERT INTO scores (user_id, quiz_id, score) VALUES
 (1, 4, 3),    -- user1 took the DBMS Quiz and scored 3
 (2, 5, 1);    -- user2 took the Digital Logic Quiz and scored 1
 
--------------------------------Views----------------------------------
+-- -----------------------------Views----------------------------------
 
 -- Create a view to get the quizId, title, userId and score
 CREATE VIEW user_quiz_data AS
@@ -131,6 +131,21 @@ CROSS JOIN
 LEFT JOIN 
     scores s ON q.id = s.quiz_id AND u.id = s.user_id
 ORDER BY u.id, q.id ASC;
+
+
+CREATE VIEW quiz_details_view AS
+SELECT 
+    qz.id,
+    qz.title,
+    qs.question_id,
+    qs.question_text,
+    opt.option_text
+FROM 
+    quizzes qz
+cross JOIN 
+    questions qs ON qz.id = qs.quiz_id
+left JOIN 
+    options opt ON qs.question_id = opt.question_id;
 
 
 -----------------------------Procedure--------------------------------

@@ -41,11 +41,12 @@ Content-Type: application/json
 ### Quiz service things-------------------------
 
 ### Get all quizzes
-GET http://localhost:8081/quiz/quizzes
+//GET http://localhost:8081/quiz/quizzes
 
 ### Get specific quiz
 
 GET http://localhost:8081/quiz/questions/1
+
 
 
 

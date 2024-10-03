@@ -4,9 +4,9 @@ import ballerina/sql;
 import ballerina/time;
 import ballerinax/mysql;
 import ballerinax/mysql.driver as _;
-import ballerina/http;
-import ballerina/sql;
-import ballerina/crypto;
+
+
+
 // import ballerina/log;
 // import ballerina/lang.regexp;
 
@@ -22,7 +22,7 @@ type DatabaseConfig record {|
 configurable DatabaseConfig databaseConfig = ?;
 // create a new mysql client using the database configuration
 mysql:Client dbClient = check new (...databaseConfig);
-
+listener http:Listener authListener = new (8080);
 listener http:Listener quizListener = new (8081);
 
 listener http:Listener scoreListener = new (8082);
@@ -158,35 +158,15 @@ service /auth on authListener {
 
 //-------------------------------------------- Quiz Service --------------------------------------------
 
-
-
-type Quiz record {|
-    readonly int id;
+type QuizQuestion record {
+    int id;
     string title;
-|};
-
-type Option record {|
+    int question_id;
+    string question_text;
     string option_text;
-|};
-
-type Question record {|
-    int id;
-    string question_text;
-|};
-
-// Extend the Question type to include options
-type QuestionWithOptions record {|
-    int id;
-    string question_text;
-    Option[] options; // Options related to the question
-|};
-
-
-type QuizWithScore record {
-    readonly int quiz_id;
-    string quiz_title;
-    string|int score;
 };
+
+//quiz_details_view
 
 @http:ServiceConfig {
     cors: {
@@ -194,9 +174,24 @@ type QuizWithScore record {
     }
 }
 service /quiz on quizListener {
+    resource function get questions/[int quizId]() returns QuizQuestion[]|error {
+        stream<QuizQuestion, sql:Error?> quizStream = dbClient->query(
+            `SELECT id, title, question_id, question_text, option_text 
+             FROM quiz_details_view 
+             WHERE id = ${quizId}`
+        );
+        
     
+        QuizQuestion[] questions = [];
+        check from QuizQuestion question in quizStream
+            do {
+                questions.push(question);
+            };
+        check quizStream.close();
+        return questions;
+    }
+  
 }
-
 //-------------------------------------------- Score Service --------------------------------------------
 
 type Score record {|
