@@ -1,12 +1,13 @@
+import ballerina/crypto;
+import ballerina/http;
+import ballerina/sql;
 import ballerina/time;
 import ballerinax/mysql;
 import ballerinax/mysql.driver as _;
 import ballerina/http;
 import ballerina/sql;
 import ballerina/crypto;
-
-
- //import ballerina/log;
+// import ballerina/log;
 // import ballerina/lang.regexp;
 
 // to cofingure the database
@@ -21,12 +22,10 @@ type DatabaseConfig record {|
 configurable DatabaseConfig databaseConfig = ?;
 // create a new mysql client using the database configuration
 mysql:Client dbClient = check new (...databaseConfig);
-  
 
-listener http:Listener authListener = new(8080);
-listener http:Listener quizListener= new(8081);
-listener http:Listener scoreListener = new(8082);
+listener http:Listener quizListener = new (8081);
 
+listener http:Listener scoreListener = new (8082);
 
 //-------------------------------------------- Auth Service --------------------------------------------
 type User record {
@@ -43,10 +42,16 @@ type UserPassword record {
     string password;
 };
 
+@http:ServiceConfig {
+    cors: {
+        allowOrigins: ["*"]
+    }
+}
+
 service /auth on authListener {
     // get all users
     // ! for testing
-    resource function get users() returns User[]|error { 
+    resource function get users() returns User[]|error {
         stream<User, sql:Error?> userStream = dbClient->query(`SELECT id, username FROM quiz_db.users`);
         return from var user in userStream
             select user;
@@ -54,7 +59,7 @@ service /auth on authListener {
 
     // get specific user
     resource function get user/[int Userid]() returns User|UserNotFound|error {
-        User|sql:Error user = dbClient->queryRow(`SELECT id, username FROM quiz_db.users WHERE id = ${Userid}`);
+        User|sql:Error user = dbClient->queryRow(`SELECT id, username FROM users WHERE id = ${Userid}`);
         if user is sql:NoRowsError {
             UserNotFound userNotFound = {
                 body: {message: string `id: ${Userid}`, details: string `user/${Userid}`, timeStamp: time:utcNow()}
@@ -62,49 +67,6 @@ service /auth on authListener {
             return userNotFound;
         }
         return user;
-    }
-
-    // create a user
-    // ! for testing
-    resource function post signup1(http:Caller caller, http:Request req) returns error? {
-        json payload = check req.getJsonPayload();
-        string username = (check payload.username).toString();
-        string password = (check payload.password).toString();
-        string role = (check payload.role).toString(); // 'user' or 'admin'
-
-        // Insert new user into the database using parameterized query
-        sql:ParameterizedQuery query = `INSERT INTO users (username, password, role) 
-                                        VALUES (${username}, ${password}, ${role})`;
-        var result = dbClient->execute(query);
-
-        if (result is sql:ExecutionResult && result.affectedRowCount > 0) {
-            check caller->respond({ "message": "User registered successfully!" });
-        } else {
-            check caller->respond({ "message": "User registration failed!" });
-        }
-    }
-
-    // create a user with hashed password
-    // ! for testing
-    resource function post signup2(http:Caller caller, http:Request req) returns error? {
-        json payload = check req.getJsonPayload();
-        string username = (check payload.username).toString();
-        string password = (check payload.password).toString();
-        string role = (check payload.role).toString(); // 'user' or 'admin'
-
-        byte[] hashedPasswordBytes = crypto:hashSha256(password.toBytes());
-        string hashedPassword = hashedPasswordBytes.toBase16();
-
-        // Insert new user into the database using parameterized query
-        sql:ParameterizedQuery query = `INSERT INTO users (username, password, role) 
-                                        VALUES (${username}, ${hashedPassword}, ${role})`;
-        var result = dbClient->execute(query);
-
-        if (result is sql:ExecutionResult && result.affectedRowCount > 0) {
-            check caller->respond({ "message": "User registered successfully!" });
-        } else {
-            check caller->respond({ "message": "User registration failed!" });
-        }
     }
 
     // create a user with hashed password using procedure
@@ -115,7 +77,7 @@ service /auth on authListener {
             payload = jsonResult;
         } else {
             // Invalid JSON payload
-            check caller->respond({ "message": "Invalid JSON format" });
+            check caller->respond({"message": "Invalid JSON format"});
             return;
         }
 
@@ -130,22 +92,28 @@ service /auth on authListener {
         var result = dbClient->execute(query);
 
         if (result is sql:ExecutionResult && result.affectedRowCount > 0) {
-            check caller->respond({ "message": "User registered successfully!" });
+            http:Response successResponse = new;
+            successResponse.statusCode = http:STATUS_CREATED; // 201 Created
+            successResponse.setPayload({"message": "User registered successfully!"});
+            check caller->respond(successResponse);
         } else {
-            check caller->respond({ "message": "User registration failed!" });
+            http:Response conflictResponse = new;
+            conflictResponse.statusCode = http:STATUS_CONFLICT; // 409 Conflict
+            conflictResponse.setPayload({"message": "User already exists!"});
+            check caller->respond(conflictResponse);
         }
     }
-    
+
     // user login
     resource function post login(http:Caller caller, http:Request req) returns error? {
-    // Extract JSON payload from the request
+        // Extract JSON payload from the request
         json payload;
         var jsonResult = req.getJsonPayload();
         if (jsonResult is json) {
             payload = jsonResult;
         } else {
             // Invalid JSON payload
-            check caller->respond({ "message": "Invalid JSON format" });
+            check caller->respond({"message": "Invalid JSON format"});
             return;
         }
 
@@ -155,7 +123,7 @@ service /auth on authListener {
 
         // Query to retrieve the hashed password from the database
         sql:ParameterizedQuery query = `SELECT password FROM users WHERE username = ${username}`;
-        
+
         // Use `query` to fetch the result with the defined row type
         UserPassword|sql:Error result = dbClient->queryRow(query, UserPassword);
 
@@ -166,20 +134,26 @@ service /auth on authListener {
             byte[] hashedPasswordBytes = crypto:hashSha256(password.toBytes());
             string hashedPassword = hashedPasswordBytes.toBase16();
 
-                    // Compare the provided hashed password with the stored hashed password
+            // Compare the provided hashed password with the stored hashed password
             if (hashedPassword == storedHashedPassword) {
-                check caller->respond({ "message": "Login successful!" });
+                http:Response successResponse = new;
+                successResponse.statusCode = http:STATUS_OK; // 200 OK
+                successResponse.setPayload({"message": "Login successful!"});
+                check caller->respond(successResponse);
             } else {
-                check caller->respond({ "message": "Invalid username or password!" });
+                http:Response invalidPasswordResponse = new;
+                invalidPasswordResponse.statusCode = http:STATUS_UNAUTHORIZED; // 401 Unauthorized
+                invalidPasswordResponse.setPayload({"message": "Invalid password!"});
+                check caller->respond(invalidPasswordResponse);
             }
-        
+
         } else {
-                // Error occurred while executing the query
-                check caller->respond({ "message": "Query failed!" });
+            http:Response userNotFoundResponse = new;
+            userNotFoundResponse.statusCode = http:STATUS_NOT_FOUND; // 404 Not Found
+            userNotFoundResponse.setPayload({"message": "User not found!"});
+            check caller->respond(userNotFoundResponse);
         }
     }
-
-    
 }
 
 //-------------------------------------------- Quiz Service --------------------------------------------
@@ -208,79 +182,19 @@ type QuestionWithOptions record {|
 |};
 
 
+type QuizWithScore record {
+    readonly int quiz_id;
+    string quiz_title;
+    string|int score;
+};
+
+@http:ServiceConfig {
+    cors: {
+        allowOrigins: ["*"]
+    }
+}
 service /quiz on quizListener {
     
-
-    resource function get quizzes() returns Quiz[]|error {
-        // Query to select all quizzes from the `quizzes` table
-        stream<Quiz, sql:Error?> quizStream = dbClient->query(`SELECT id, title FROM quiz_db.quizzes`);
-        
-        // Initialize an empty array to store the quizzes
-        Quiz[] quizzes = [];
-        
-        // Iterate over the quiz stream and collect all quizzes
-        check from Quiz quiz in quizStream
-            do {
-                quizzes.push(quiz);
-            };
-        
-        // Ensure that the stream is closed after fetching the data
-        check quizStream.close();
-        
-        // Return the list of quizzes
-        return quizzes;
-    
-    
-   
-    }
-   
-    
-    resource function get questions/[int Quizid]() returns QuestionWithOptions[]|error {
-    // Query to fetch questions for the given quizId
-    stream<Question, sql:Error?> questionStream = dbClient->query(
-        `SELECT id, question_text FROM quiz_db.questions WHERE quiz_id = ${Quizid}`
-    );
-
-    // Initialize an empty array to store the questions with options
-    QuestionWithOptions[] questionsWithOptions = [];
-
-    // Iterate over the question stream and collect all questions
-    check from Question question in questionStream
-        do {
-            // Fetch options for each question
-            stream<Option, sql:Error?> optionStream = dbClient->query(
-                `SELECT option_text FROM quiz_db.options WHERE question_id = ${question.id}`
-            );
-
-            // Initialize an empty array to store the options for the current question
-            Option[] options = [];
-
-            // Iterate over the option stream and collect options
-            check from Option opt in optionStream
-                do {
-                    options.push(opt);
-                };
-
-            // Close the option stream
-            check optionStream.close();
-
-            // Create a new QuestionWithOptions record and add it to the result
-            questionsWithOptions.push({
-                id: question.id,
-                question_text: question.question_text,
-                options: options
-            });
-        };
-
-    // Close the question stream
-    check questionStream.close();
-
-    // Return the list of questions along with their options
-    return questionsWithOptions;
-   
-    }
-
-
 }
 
 //-------------------------------------------- Score Service --------------------------------------------
@@ -307,11 +221,17 @@ type ScoreNotFound record {|
     ErrorDetails body;
 |};
 
+
+@http:ServiceConfig {
+    cors: {
+        allowOrigins: ["*"]
+    }
+}
 service /quizscore on scoreListener {
     // get all scores
     // ! for testing
     resource function get scores() returns Score[]|error {
-        stream<Score, sql:Error?> scoreStream = dbClient->query(`SELECT * FROM quiz_db.scores`);
+        stream<Score, sql:Error?> scoreStream = dbClient->query(`SELECT * FROM scores`);
         Score[] scores = [];
         check from Score score in scoreStream
             do {
@@ -323,7 +243,7 @@ service /quizscore on scoreListener {
 
     // get all scores of a specific user
     resource function get scores/user/[int Userid]() returns Score[]|error {
-        stream<Score, sql:Error?> scoreStream = dbClient->query(`SELECT * FROM quiz_db.scores WHERE user_id = ${Userid}`);
+        stream<Score, sql:Error?> scoreStream = dbClient->query(`SELECT * FROM scores WHERE user_id = ${Userid}`);
         Score[] scores = [];
         check from Score score in scoreStream
             do {
@@ -335,7 +255,7 @@ service /quizscore on scoreListener {
 
     // get all scores of a specific quiz
     resource function get scores/quiz/[int Quizid]() returns Score[]|error {
-        stream<Score, sql:Error?> scoreStream = dbClient->query(`SELECT * FROM quiz_db.scores WHERE quiz_id = ${Quizid}`);
+        stream<Score, sql:Error?> scoreStream = dbClient->query(`SELECT * FROM scores WHERE quiz_id = ${Quizid}`);
         Score[] scores = [];
         check from Score score in scoreStream
             do {
@@ -359,6 +279,7 @@ service /quizscore on scoreListener {
 
     // resource function get scores/user/[int Userid]() returns Score|ScoreNotFound|error {
     //     Score|error scores = dbClient->queryRow(`SELECT * FROM quiz_db.scores WHERE user_id = ${Userid}`);
+
     //     if scores is sql:NoRowsError {
     //         ScoreNotFound scoreNotFound = {
     //             body: {message: string `id: ${Userid}`, details: string `scores/user/${Userid}`, timeStamp: time:utcNow()}

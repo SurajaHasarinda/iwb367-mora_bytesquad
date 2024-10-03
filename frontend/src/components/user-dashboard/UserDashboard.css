@@ -1,0 +1,6 @@
+.account-container {
+    position: absolute;  /* Use absolute positioning */
+    top: 50px;          /* Adjust as needed for vertical spacing */
+    right: 50px;   
+}
+

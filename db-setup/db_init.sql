@@ -1,3 +1,4 @@
+-- Active: 1725907957738@@127.0.0.1@3306@quiz_db
 -- Create the database
 CREATE DATABASE IF NOT EXISTS quiz_db;
 
@@ -115,6 +116,21 @@ INSERT INTO scores (user_id, quiz_id, score) VALUES
 (2, 5, 1);    -- user2 took the Digital Logic Quiz and scored 1
 
 -------------------------------Views----------------------------------
+
+-- Create a view to get the quizId, title, userId and score
+CREATE VIEW user_quiz_data AS
+SELECT 
+    q.id AS quiz_id, 
+    q.title AS quiz_title, 
+    u.id AS user_id, 
+    COALESCE(s.score, 'NA') AS score -- Use 'NA' if no score exists
+FROM 
+    quizzes q
+CROSS JOIN 
+    users u
+LEFT JOIN 
+    scores s ON q.id = s.quiz_id AND u.id = s.user_id
+ORDER BY u.id, q.id ASC;
 
 
 -----------------------------Procedure--------------------------------

@@ -19,13 +19,12 @@ Content-Type: application/json
     "role": "user"
 }
 
-
 ### Test hashed Signup Endpoint
 POST http://localhost:8080/auth/signup
 Content-Type: application/json
 
 {
-    "username": "Hasarinda",
+    "username": "Hasarinda3",
     "password": "sh2001"
 }
 
@@ -69,4 +68,7 @@ GET http://localhost:8080/auth/users
 
 ### Get specific user
 GET http://localhost:8080/auth/user/1
+
+### Get all quizzes with user scores
+GET http://localhost:8081/quiz/all/user/1
 
