@@ -4,10 +4,8 @@ import ballerina/sql;
 import ballerina/time;
 import ballerinax/mysql;
 import ballerinax/mysql.driver as _;
+import ballerina/log;
 
-
-
-// import ballerina/log;
 // import ballerina/lang.regexp;
 
 // to cofingure the database
@@ -18,13 +16,14 @@ type DatabaseConfig record {|
     string password;
     string database;
 |};
+
 // get the database configuration from the Config.toml file
 configurable DatabaseConfig databaseConfig = ?;
+
 // create a new mysql client using the database configuration
 mysql:Client dbClient = check new (...databaseConfig);
 listener http:Listener authListener = new (8080);
 listener http:Listener quizListener = new (8081);
-
 listener http:Listener scoreListener = new (8082);
 
 //-------------------------------------------- Auth Service --------------------------------------------
@@ -171,7 +170,17 @@ type Quiz record {
     string title;
 };
 
-//quiz_details_view
+type QuizWithScore record {
+    readonly int quiz_id;
+    string quiz_title;
+    string|int score;
+};
+
+type QuizSubmission record {
+    int quizId;
+    int userId;
+    map<string> answers;
+};
 
 @http:ServiceConfig {
     cors: {
@@ -179,6 +188,19 @@ type Quiz record {
     }
 }
 service /quiz on quizListener {
+    // get all quizzes with user scores
+    resource function get all/user/[int Userid]() returns QuizWithScore[]|error {
+        stream<QuizWithScore, sql:Error?> dataStream = dbClient->query(`SELECT quiz_id, quiz_title, score FROM user_quiz_data WHERE user_id = ${Userid}`);
+        QuizWithScore[] quizWithScore = [];
+        check from QuizWithScore data in dataStream
+            do {
+                quizWithScore.push(data);
+            };
+        check dataStream.close();
+        return quizWithScore;
+    }
+
+    // get questions of a specific quiz
     resource function get questions/[int quizId]() returns QuizQuestion[]|error {
         stream<QuizQuestion, sql:Error?> quizStream = dbClient->query(
             `SELECT id, title, question_id, question_text, option_text 
@@ -186,7 +208,6 @@ service /quiz on quizListener {
              WHERE id = ${quizId}`
         );
         
-    
         QuizQuestion[] questions = [];
         check from QuizQuestion question in quizStream
             do {
@@ -195,6 +216,52 @@ service /quiz on quizListener {
         check quizStream.close();
         return questions;
     }
+
+    // handle quiz submission
+    resource function post submit(http:Caller caller, http:Request req) returns error? {
+        json payload;
+        var jsonResult = req.getJsonPayload();
+        if (jsonResult is json) {
+            payload = jsonResult;
+        } else {
+            // Invalid JSON payload
+            check caller->respond({"message": "Invalid JSON format"});
+            return;
+        }
+        QuizSubmission submission = check payload.cloneWithType(QuizSubmission);
+        int userId = submission.userId;
+        int quizId = submission.quizId;
+
+        // Log the received submission data
+        log:printInfo("Received quiz submission: " + submission.toString());
+
+        int score = 0; // Initialize the score
+
+        // check each answer against the database
+        foreach var [questionId, answer] in submission.answers.entries() {
+            int|error result = check dbClient->queryRow(`SELECT CheckAnswer(${questionId}, ${answer})`);
+            if (result == 1) {
+                score += result;
+            } 
+            log:printInfo(score.toString()); // ! testing
+        }
+        
+        int percentage = (score * 100) / submission.answers.length();
+        log:printInfo(percentage.toString()); // ! testing
+
+        // Insert the score into the database
+        sql:ParameterizedQuery query = `CALL UpdateScore(${userId}, ${quizId}, ${percentage})`;
+        var result = dbClient->execute(query);
+
+        if (result is sql:ExecutionResult && result.affectedRowCount > 0) {
+            log:printInfo("Quiz submitted successfully");
+            check caller->respond({ message: "Quiz submitted successfully" });
+        } else {
+            log:printError("Failed to submit the quiz");
+            check caller->respond({ message: "Quiz submission failed" });
+        } 
+    }
+    
 
    resource function get list() returns Quiz[]|error {
         // Create a stream to fetch quiz records
@@ -296,22 +363,4 @@ service /quizscore on scoreListener {
         return scores;
     }
 
-    // resource function get scores/user/[int Userid]() returns Score|ScoreNotFound|error {
-    //     Score|error scores = dbClient->queryRow(`SELECT * FROM quiz_db.scores WHERE user_id = ${Userid}`);
-
-    //     if scores is sql:NoRowsError {
-    //         ScoreNotFound scoreNotFound = {
-    //             body: {message: string `id: ${Userid}`, details: string `scores/user/${Userid}`, timeStamp: time:utcNow()}
-    //         };
-    //         return scoreNotFound;
-    //     }
-    //     return scores;
-    // }
-
 }
-
-function buildErrorPayload(string msg, string path) returns ErrorDetails => {
-    message: msg,
-    timeStamp: time:utcNow(),
-    details: string `uri=${path}`
-};
