@@ -5,6 +5,8 @@ import ballerina/time;
 import ballerinax/mysql;
 import ballerinax/mysql.driver as _;
 
+
+
 // import ballerina/log;
 // import ballerina/lang.regexp;
 
@@ -16,14 +18,11 @@ type DatabaseConfig record {|
     string password;
     string database;
 |};
-
 // get the database configuration from the Config.toml file
 configurable DatabaseConfig databaseConfig = ?;
 // create a new mysql client using the database configuration
-final mysql:Client dbClient = check new (...databaseConfig);
-
+mysql:Client dbClient = check new (...databaseConfig);
 listener http:Listener authListener = new (8080);
-
 listener http:Listener quizListener = new (8081);
 
 listener http:Listener scoreListener = new (8082);
@@ -159,11 +158,20 @@ service /auth on authListener {
 
 //-------------------------------------------- Quiz Service --------------------------------------------
 
-type QuizWithScore record {
-    readonly int quiz_id;
-    string quiz_title;
-    string|int score;
+type QuizQuestion record {
+    int id;
+    readonly string title;
+    readonly int question_id;
+    readonly string question_text;
+    string option_text;
 };
+
+type Quiz record {
+    int id;
+    string title;
+};
+
+//quiz_details_view
 
 @http:ServiceConfig {
     cors: {
@@ -171,20 +179,43 @@ type QuizWithScore record {
     }
 }
 service /quiz on quizListener {
-
-    resource function get all/user/[int Userid]() returns QuizWithScore[]|error {
-        stream<QuizWithScore, sql:Error?> dataStream = dbClient->query(`SELECT quiz_id, quiz_title, score FROM user_quiz_data WHERE user_id = ${Userid}`);
-        QuizWithScore[] quizWithScore = [];
-        check from QuizWithScore data in dataStream
+    resource function get questions/[int quizId]() returns QuizQuestion[]|error {
+        stream<QuizQuestion, sql:Error?> quizStream = dbClient->query(
+            `SELECT id, title, question_id, question_text, option_text 
+             FROM quiz_details_view 
+             WHERE id = ${quizId}`
+        );
+        
+    
+        QuizQuestion[] questions = [];
+        check from QuizQuestion question in quizStream
             do {
-                quizWithScore.push(data);
+                questions.push(question);
             };
-        check dataStream.close();
-        return quizWithScore;
+        check quizStream.close();
+        return questions;
     }
 
-}
+   resource function get list() returns Quiz[]|error {
+        // Create a stream to fetch quiz records
+        stream<Quiz, sql:Error?> quizStream = dbClient->query(`SELECT id, title FROM quizzes`); // Adjust the SQL as necessary
 
+        Quiz[] quizzes = []; // Array to hold the quizzes
+
+        // Process the stream
+        check from Quiz quiz in quizStream
+            do {
+                quizzes.push(quiz); // Add each quiz to the array
+            };
+
+        // Close the stream
+        check quizStream.close();
+
+        // Return the accumulated list of quizzes
+        return quizzes;
+    }
+  
+}
 //-------------------------------------------- Score Service --------------------------------------------
 
 type Score record {|
