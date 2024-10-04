@@ -44,7 +44,10 @@ Content-Type: application/json
 //GET http://localhost:8081/quiz/quizzes
 
 ### Get specific quiz
+GET http://localhost:8081/quiz/list
 
+
+### Get specific quiz
 GET http://localhost:8081/quiz/questions/1
 
 

@@ -160,10 +160,15 @@ service /auth on authListener {
 
 type QuizQuestion record {
     int id;
-    string title;
-    int question_id;
-    string question_text;
+    readonly string title;
+    readonly int question_id;
+    readonly string question_text;
     string option_text;
+};
+
+type Quiz record {
+    int id;
+    string title;
 };
 
 //quiz_details_view
@@ -189,6 +194,25 @@ service /quiz on quizListener {
             };
         check quizStream.close();
         return questions;
+    }
+
+   resource function get list() returns Quiz[]|error {
+        // Create a stream to fetch quiz records
+        stream<Quiz, sql:Error?> quizStream = dbClient->query(`SELECT id, title FROM quizzes`); // Adjust the SQL as necessary
+
+        Quiz[] quizzes = []; // Array to hold the quizzes
+
+        // Process the stream
+        check from Quiz quiz in quizStream
+            do {
+                quizzes.push(quiz); // Add each quiz to the array
+            };
+
+        // Close the stream
+        check quizStream.close();
+
+        // Return the accumulated list of quizzes
+        return quizzes;
     }
   
 }
