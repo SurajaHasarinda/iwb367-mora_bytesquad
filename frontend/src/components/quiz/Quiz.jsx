@@ -1,5 +1,8 @@
+// src/components/QuizPage.js
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import './Quizpage.css'; // Import the CSS file
 
 const QuizPage = () => {
     const { quizId } = useParams();
@@ -7,6 +10,7 @@ const QuizPage = () => {
     const [questions, setQuestions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [selectedOptions, setSelectedOptions] = useState({}); // To track selected options
 
     useEffect(() => {
         const fetchQuiz = async () => {
@@ -60,46 +64,46 @@ const QuizPage = () => {
         return <div>Error: {error}</div>;
     }
 
+    const handleOptionClick = (questionId, selectedOption) => {
+        setSelectedOptions(prevState => ({
+            ...prevState,
+            [questionId]: selectedOption
+        }));
+        console.log(`Question ID: ${questionId}, Selected Option: ${selectedOption}`);
+        // Implement additional logic as needed (e.g., navigate to next question, submit answer, etc.)
+    };
+
     return (
-        <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-            <h1>{quizTitle || 'Quiz'}</h1>
+        <div className="quiz-container">
+            <h1 className="quiz-title">{quizTitle || 'Quiz'}</h1>
             {questions.length === 0 ? (
                 <p>No questions available for this quiz.</p>
             ) : (
                 questions.map((question) => (
-                    <div key={question.question_id} style={{ marginBottom: '20px' }}>
-                        <h4>{question.question_text}</h4>
-                        <div>
-                            {question.options.map((option, index) => (
-                                <button
-                                    key={index}
-                                    style={{
-                                        display: 'block',
-                                        width: '100%',
-                                        padding: '10px',
-                                        margin: '5px 0',
-                                        cursor: 'pointer',
-                                        border: '1px solid #ccc',
-                                        borderRadius: '4px',
-                                        backgroundColor: '#f9f9f9'
-                                    }}
-                                    onClick={() => handleOptionClick(question.question_id, option)}
-                                >
-                                    {option}
-                                </button>
-                            ))}
+                    <div key={question.question_id} className="question">
+                        <h4 className="question-text">{question.question_text}</h4>
+                        <div className="options">
+                            {question.options.map((option, index) => {
+                                const isSelected = selectedOptions[question.question_id] === option;
+                                return (
+                                    <button
+                                        key={index}
+                                        className={`option-button ${isSelected ? 'selected' : ''}`}
+                                        onClick={() => handleOptionClick(question.question_id, option)}
+                                    >
+                                        <span className="option-icon">
+                                            {isSelected && <span></span>}
+                                        </span>
+                                        <span className="option-text">{option}</span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 ))
             )}
         </div>
     );
-
-    // Example handler for option click (you can implement your own logic)
-    function handleOptionClick(questionId, selectedOption) {
-        console.log(`Question ID: ${questionId}, Selected Option: ${selectedOption}`);
-        // Implement your logic (e.g., record the answer, navigate to the next question, etc.)
-    }
 };
 
 export default QuizPage;
