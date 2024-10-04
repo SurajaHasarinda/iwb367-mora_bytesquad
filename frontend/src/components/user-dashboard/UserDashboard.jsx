@@ -11,7 +11,7 @@ import Logout from '@mui/icons-material/Logout';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import './UserDashboard.css';
 
-import QuizCards from '../quiz-page/QuizCards';
+import QuizCards from '../quiz-cards/QuizCards';
 
 
 function stringAvatar(name) {

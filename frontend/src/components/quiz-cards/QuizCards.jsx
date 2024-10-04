@@ -7,9 +7,9 @@ import axios from 'axios';
 const userId = 1; // TODO: Replace with actual user ID
 
 const determineIconColor = (score) => {
-    if (score === 'NA') return 'gray';
-    if (score >= 8) return 'green';
-    if (score >= 5) return 'orange';
+    if (score === 'N/A') return 'gray';
+    if (score >= 75) return 'green';
+    if (score >= 40) return 'orange';
     return 'red';
 };
 
@@ -55,11 +55,11 @@ const QuizCards = () => {
 
   return (
     <div className="quiz-cards-container">
-      {quizData.map((quiz, index) => (
+      {quizData.map((quiz) => (
         <Card 
           className="quiz-card"
           variant="outlined" 
-          key={index} 
+          key={quiz.quiz_id} 
           style={{ 
             flex: `0 1 calc(${100 / gridSize}% - 20px)`, // 20px accounts for the margin
             margin: '20px',

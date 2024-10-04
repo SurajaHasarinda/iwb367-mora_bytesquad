@@ -1,4 +1,24 @@
 
+### Test Signup Endpoint
+POST http://localhost:8080/auth/signup1
+Content-Type: application/json
+
+{
+    "username": "testuser",
+    "password": "password123",
+    "role": "user"
+}
+
+### Test hashed Signup Endpoint
+POST http://localhost:8080/auth/signup2
+Content-Type: application/json
+
+{
+    "username": "suraja",
+    "password": "suraja2001",
+    "role": "user"
+}
+
 ### Test hashed Signup Endpoint
 POST http://localhost:8080/auth/signup
 Content-Type: application/json
@@ -18,6 +38,23 @@ Content-Type: application/json
 }
 
 
+### Quiz service things-------------------------
+
+### Get all quizzes
+//GET http://localhost:8081/quiz/quizzes
+
+### Get specific quiz
+GET http://localhost:8081/quiz/list
+
+
+### Get specific quiz
+GET http://localhost:8081/quiz/questions/1
+
+
+
+
+
+###------------------------------------------------------------
 ### Get all scores all users
 GET http://localhost:8082/quizscore/scores
 
