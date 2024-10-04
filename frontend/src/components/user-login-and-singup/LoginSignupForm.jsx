@@ -6,7 +6,7 @@ import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 
 const LoginSignupForm = () => {
-  const [isLoginActive, setIsLoginActive] = useState(true);
+  const [isLoginActive, setIsLoginActive] = useState(true); // login form is active by default
 
   // State for login form
   const [username, setUsername] = useState('');
@@ -109,6 +109,8 @@ const LoginSignupForm = () => {
     
       if (response.status === 201) {
         showMessage(response.data.message || "Signup successful!", "success");
+        // togle to login form
+        toggleForm();
       } else {
         showMessage(response.data.message || "Signup failed!", "error");
       }
