@@ -1,8 +1,11 @@
 // Leaderboard.js
 import React, { useEffect, useState } from 'react';
 import './Leaderboard.css'; // Import CSS for styling
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMedal } from '@fortawesome/free-solid-svg-icons';
+
+// Import medal images
+import goldMedal from '../../assets/images/gold.png';
+import silverMedal from '../../assets/images/silver.png';
+import bronzeMedal from '../../assets/images/bronze.png';
 
 function Leaderboard() {
     const [quizzes, setQuizzes] = useState([]);
@@ -57,8 +60,6 @@ function Leaderboard() {
                 }
 
                 setLeaderboard(data);
-
-             
             } catch (error) {
                 setError(error.message);
             } finally {
@@ -71,14 +72,12 @@ function Leaderboard() {
 
     const handleQuizSelect = (quizId) => {
         setSelectedQuizId(quizId);
+        setLeaderboard([]); // Clear previous leaderboard data
+        setError(''); // Clear previous errors
     };
 
     if (loadingQuizzes) {
         return <div className="loader">Loading quizzes...</div>;
-    }
-
-    if (error) {
-        return <div id="errorMessage">{error}</div>;
     }
 
     return (
@@ -89,7 +88,7 @@ function Leaderboard() {
                 onChange={(e) => handleQuizSelect(e.target.value)}
                 value={selectedQuizId || ""}
             >
-            
+                <option value="" disabled>Select a Quiz</option>
                 {quizzes.map((quiz) => (
                     <option key={quiz.id} value={quiz.id}>
                         {quiz.title}
@@ -97,9 +96,10 @@ function Leaderboard() {
                 ))}
             </select>
 
+            {error && <div id="errorMessage">{error}</div>}
+
             {selectedQuizId && (
                 <div className="leaderboard-container">
-                    <h2>Leaderboard</h2>
                     {loadingLeaderboard ? (
                         <div className="loader">Loading leaderboard...</div>
                     ) : (
@@ -113,12 +113,13 @@ function Leaderboard() {
                                 <div key={entry.username} className="leaderboard-card">
                                     <span className="place">
                                         {index < 3 ? (
-                                            <FontAwesomeIcon
-                                                icon={faMedal}
-                                                className={`medal-icon medal-${index + 1}`}
+                                            <img
+                                                src={getMedalImage(index + 1)}
+                                                alt={`${getMedalAlt(index + 1)} Medal`}
+                                                className="medal-image"
                                             />
                                         ) : (
-                                            index + 1
+                                            <div className="rank-circle">{index + 1}</div>
                                         )}
                                     </span>
                                     <span className="username">{entry.username}</span>
@@ -127,11 +128,38 @@ function Leaderboard() {
                             ))}
                         </div>
                     )}
-                   
                 </div>
             )}
         </div>
     );
 }
+
+// Helper function to get medal image based on rank
+const getMedalImage = (rank) => {
+    switch (rank) {
+        case 1:
+            return goldMedal;
+        case 2:
+            return silverMedal;
+        case 3:
+            return bronzeMedal;
+        default:
+            return '';
+    }
+};
+
+// Helper function to get alt text for medal images
+const getMedalAlt = (rank) => {
+    switch (rank) {
+        case 1:
+            return 'Gold';
+        case 2:
+            return 'Silver';
+        case 3:
+            return 'Bronze';
+        default:
+            return '';
+    }
+};
 
 export default Leaderboard;
