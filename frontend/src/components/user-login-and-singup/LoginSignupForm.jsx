@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import "./LoginSignupForm.css";
@@ -51,6 +51,18 @@ const LoginSignupForm = () => {
     setSnackbarOpen(false);
   };
 
+  const fetchUser = async () => {
+    try {
+      const response = await axios.get(`http://localhost:8080/auth/user/${username}`);
+      // store user data in local storage
+      localStorage.setItem('userId', response.data.id);
+      localStorage.setItem('username', response.data.userName);
+      window.location.reload(); // reload the page
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
   // Handle login
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -62,7 +74,12 @@ const LoginSignupForm = () => {
 
         if (response.status === 200) {
           showMessage(response.data.message || "Login successful!", "success");
+          
           localStorage.setItem('token', response.data.token);
+
+          // fetch user data
+          fetchUser();
+
           console.log(response.data);
           navigate('/user-dashboard');
         } else {
@@ -70,8 +87,6 @@ const LoginSignupForm = () => {
         }
     } catch (error) {
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
         if (error.response.status === 401) {
           showMessage(error.response.data.message || "Invalid credentials!", "error");
         } else if (error.response.status === 404) {

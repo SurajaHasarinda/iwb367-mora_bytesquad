@@ -5,7 +5,7 @@ import QuizIcon from '@mui/icons-material/Quiz';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const userId = 1; // TODO: Replace with actual user ID
+const userId = localStorage.getItem('userId');
 
 const determineIconColor = (score) => {
     if (score === 'N/A') return 'gray';
@@ -35,16 +35,16 @@ const QuizCards = () => {
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth <= 768) {
-        setGridSize(1); // Adjust grid size for small screens
+        setGridSize(1);
       } else if (window.innerWidth <= 1024) {
-        setGridSize(2); // Adjust grid size for medium screens
+        setGridSize(2);
       } else {
-        setGridSize(3); // Default grid size for large screens
+        setGridSize(3);
       }
     };
 
     window.addEventListener('resize', handleResize);
-    handleResize(); // Initial adjustment
+    handleResize();
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -69,10 +69,10 @@ const QuizCards = () => {
           key={quiz.quiz_id} 
           onClick={() => { selectQuiz(quiz.quiz_id) }}
           style={{ 
-            flex: `0 1 calc(${100 / gridSize}% - 20px)`, // 20px accounts for the margin
+            flex: `0 1 calc(${100 / gridSize}% - 20px)`,
             margin: '20px',
             borderRadius: '15px',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' // Subtle shadow for depth
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
           }}
         >
           <CardContent style={{ textAlign: 'center' }}>

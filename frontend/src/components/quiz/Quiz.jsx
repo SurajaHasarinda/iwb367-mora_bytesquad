@@ -3,6 +3,9 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import Button from '@mui/material/Button';
 import './Quiz.css';
+import ScoreCard from '../score/ScoreCard';
+
+const UserID = parseInt(localStorage.getItem('userId'), 10);
 
 const QuizPage = () => {
     const { quizId } = useParams();
@@ -12,6 +15,8 @@ const QuizPage = () => {
     const [error, setError] = useState(null);
     const [selectedOptions, setSelectedOptions] = useState({}); // To track selected options
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0); // To track the current question index
+    const [submitted, setSubmitted] = useState(false); // To track if the quiz is submitted
+    const [score, setScore] = useState(null); // To store the fetched score
 
     const quizIdInt = parseInt(quizId, 10); // Convert quizId to integer
 
@@ -73,7 +78,6 @@ const QuizPage = () => {
             [questionId]: selectedOption
         }));
         console.log(`Question ID: ${questionId}, Selected Option: ${selectedOption}`);
-        // Implement additional logic as needed (e.g., navigate to next question, submit answer, etc.)
     };
 
     const handleNextQuestion = () => {
@@ -91,34 +95,42 @@ const QuizPage = () => {
     const currentQuestion = questions[currentQuestionIndex];
 
     const handleSubmitQuiz = async () => {
-        // Implement the submit functionality here
         console.log('Quiz submitted with selected options:', selectedOptions);
         const finalSelectedOptions = questions.reduce((acc, question) => {
             acc[question.question_id] = selectedOptions[question.question_id] || "N/A"; // Set to selected option or "N/A" if not answered
             return acc;
         }, {});
-        console.log(finalSelectedOptions);
 
         const submitData = {
-            quizId: quizIdInt, // Assuming you have quizId available in your component
-            userId: 1, // Replace with actual user ID from your auth context or state
+            quizId: quizIdInt,
+            userId: UserID, 
             answers: finalSelectedOptions,
         };
 
         console.log(submitData);
 
-
         try { 
             const response = await axios.post('http://localhost:8081/quiz/submit', submitData);
             console.log('Quiz submitted successfully:', response.data);
-            // Handle success scenario (e.g., show success message, redirect to dashboard, etc.)
-        }
-        catch (error) {
+        } catch (error) {
             console.error('Error submitting quiz:', error);
-            // Handle error scenario (e.g., show error message, allow user to retry, etc.)
         }
-
+        
+        // Fetch the quiz score
+        try {
+            const response = await axios.get (`http://localhost:8082/quizscore/score/user/${UserID}/quiz/${quizIdInt}`);
+            console.log('Quiz Score:', response.data.score);
+            setScore(response.data.score); // Set the fetched score
+            setSubmitted(true); // Mark the quiz as submitted
+        } catch (error) {
+            console.error('Error fetching quiz score:', error);
+        }
     };
+
+    // If quiz is submitted, show the score card
+    if (submitted && score !== null) {
+        return <ScoreCard score={score} />;
+    }
 
     return (
         <div className="quiz-container">
@@ -163,7 +175,7 @@ const QuizPage = () => {
                 <Button 
                     variant="contained" 
                     color="secondary" 
-                    onClick={handleSubmitQuiz}  // Submit logic here
+                    onClick={handleSubmitQuiz}
                 >
                     Submit Quiz
                 </Button>

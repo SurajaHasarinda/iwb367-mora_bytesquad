@@ -34,11 +34,11 @@ service /auth on authListener {
     }
 
     // get specific user
-    resource function get user/[int Userid]() returns User|UserNotFound|error {
-        User|sql:Error user = dbClient->queryRow(`SELECT id, username FROM users WHERE id = ${Userid}`);
+    resource function get user/[string username]() returns User|UserNotFound|error {
+        User|sql:Error user = dbClient->queryRow(`SELECT id, username FROM users WHERE username = ${username}`);
         if user is sql:NoRowsError {
             UserNotFound userNotFound = {
-                body: {message: string `id: ${Userid}`, details: string `user/${Userid}`, timeStamp: time:utcNow()}
+                body: {message: string `username: ${username}`, details: string `user/${username}`, timeStamp: time:utcNow()}
             };
             return userNotFound;
         }
@@ -200,7 +200,7 @@ service /quiz on quizListener {
         int quizId = submission.quizId;
 
         // Log the received submission data
-        log:printInfo("Received quiz submission: " + submission.toString());
+        log:printInfo("Received quiz submission: " + submission.toString()); // ! testing
 
         int score = 0; // Initialize the score
 
@@ -221,10 +221,10 @@ service /quiz on quizListener {
         var result = dbClient->execute(query);
 
         if (result is sql:ExecutionResult && result.affectedRowCount > 0) {
-            log:printInfo("Quiz submitted successfully");
+            log:printInfo("Quiz submitted successfully"); // ! testing
             check caller->respond({ message: "Quiz submitted successfully" });
         } else {
-            log:printError("Failed to submit the quiz");
+            log:printError("Failed to submit the quiz"); // ! testing
             check caller->respond({ message: "Quiz submission failed" });
         } 
     }
