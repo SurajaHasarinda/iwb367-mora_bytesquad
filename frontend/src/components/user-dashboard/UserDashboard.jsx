@@ -10,8 +10,10 @@ import Tooltip from '@mui/material/Tooltip';
 import Logout from '@mui/icons-material/Logout';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import './UserDashboard.css';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 
 import QuizCards from '../quiz-cards/QuizCards';
+import Quiz from '../quiz/Quiz';
 
 
 function stringAvatar(name) {
@@ -37,6 +39,14 @@ export default function AccountMenu() {
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    handleClose();
+    navigate(`/`);
   };
 
   return (
@@ -102,7 +112,7 @@ export default function AccountMenu() {
               My score
             </MenuItem>
             <Divider />
-            <MenuItem onClick={handleClose}>
+            <MenuItem onClick={handleLogout}>
               <ListItemIcon>
                 <Logout fontSize="small" />
               </ListItemIcon>
@@ -111,7 +121,10 @@ export default function AccountMenu() {
           </Menu>
       </div>
       <div className='main-container'>
-        <QuizCards />
+      <Routes>
+        <Route path="/" element={ <QuizCards />} />
+        <Route path="quiz/:quizId" element={<Quiz />} />
+      </Routes>
       </div>
     </div>
   );
