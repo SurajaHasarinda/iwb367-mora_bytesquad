@@ -1,0 +1,38 @@
+/* Leaderboard.css */
+.quiz-list {
+    max-width: 300px; /* Set a max width for the quiz list */
+    margin: 20px 0; /* Add some margin */
+}
+
+.scrollable-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px; /* Set a max height for scrolling */
+    overflow-y: auto; /* Enable vertical scrolling */
+    border: 1px solid #ccc; /* Add a border */
+}
+
+.scrollable-list li {
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.scrollable-list li:hover {
+    background-color: #f0f0f0; /* Change background on hover */
+}
+
+#leaderboardTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#leaderboardTable th, #leaderboardTable td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+#leaderboardTable th {
+    background-color: #f2f2f2;
+}

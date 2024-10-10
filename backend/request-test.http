@@ -26,6 +26,11 @@ GET http://localhost:8081/quiz/list
 ### Get specific quiz
 GET http://localhost:8081/quiz/questions/1
 
+### Get specific leaderboard
+GET http://localhost:8081/quiz/LeaderboardByQuizTitle/1
+
+### Get all leaderboard 
+GET http://localhost:8081/quiz/Quizzes
 ###------------------------------------------------------------
 
 ### Get all scores all users

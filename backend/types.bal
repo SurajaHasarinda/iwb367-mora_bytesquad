@@ -70,3 +70,19 @@ public type ScoreNotFound record {|
     *http:NotFound;
     ErrorDetails body;
 |};
+
+
+
+// Define the record for leaderboard entries
+type LeaderboardEntry record {
+    string username;
+    string quiz_title;
+    int score;
+    int rank_position;
+};
+
+// Define a record type to represent the quiz information
+type QuizInfo record {
+    int id;
+    string title;
+};

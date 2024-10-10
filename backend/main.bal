@@ -247,6 +247,46 @@ service /quiz on quizListener {
         // Return the accumulated list of quizzes
         return quizzes;
     }
+
+
+   resource function get LeaderboardByQuizTitle/[int quizId]() returns LeaderboardEntry[]|error {
+    stream<LeaderboardEntry, sql:Error?> leaderboardStream = dbClient->query(
+        `SELECT username, quiz_id,quiz_title, score, rank_position 
+         FROM leaderboard_view 
+         WHERE quiz_id = ${quizId}`
+    );
+    
+    LeaderboardEntry[] leaderboard = [];
+    check from LeaderboardEntry entry in leaderboardStream
+        do {
+            leaderboard.push(entry);
+        };
+    check leaderboardStream.close();
+    return leaderboard;
+}
+
+ resource function get Quizzes() returns QuizInfo[]|error {
+    // Query to select the id and title from the quizzes table
+    stream<QuizInfo, sql:Error?> quizzesStream = dbClient->query(
+        `SELECT id, title 
+         FROM quizzes`
+    );
+
+    QuizInfo[] quizzes = [];
+    
+    // Iterate through the stream and collect results
+    check from QuizInfo quiz in quizzesStream
+        do {
+            quizzes.push(quiz);
+        };
+
+    // Close the stream after processing
+    check quizzesStream.close();
+    
+    return quizzes;
+}
+
+
   
 }
 //-------------------------------------------- Score Service --------------------------------------------
