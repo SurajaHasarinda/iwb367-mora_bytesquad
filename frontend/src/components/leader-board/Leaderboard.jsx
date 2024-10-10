@@ -1,6 +1,8 @@
 // Leaderboard.js
 import React, { useEffect, useState } from 'react';
 import './Leaderboard.css'; // Import CSS for styling
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMedal } from '@fortawesome/free-solid-svg-icons';
 
 function Leaderboard() {
     const [quizzes, setQuizzes] = useState([]);
@@ -9,13 +11,16 @@ function Leaderboard() {
     const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
     const [error, setError] = useState('');
     const [selectedQuizId, setSelectedQuizId] = useState(null);
-
+  
     // Fetch quizzes on component mount
     useEffect(() => {
         const fetchQuizzes = async () => {
             const apiUrl = 'http://localhost:8081/quiz/Quizzes';
             try {
                 const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status} ${response.statusText}`);
+                }
                 const data = await response.json();
 
                 if (!Array.isArray(data) || data.length === 0) {
@@ -42,6 +47,9 @@ function Leaderboard() {
             setLoadingLeaderboard(true);
             try {
                 const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status} ${response.statusText}`);
+                }
                 const data = await response.json();
 
                 if (!Array.isArray(data) || data.length === 0) {
@@ -49,6 +57,8 @@ function Leaderboard() {
                 }
 
                 setLeaderboard(data);
+
+             
             } catch (error) {
                 setError(error.message);
             } finally {
@@ -64,7 +74,7 @@ function Leaderboard() {
     };
 
     if (loadingQuizzes) {
-        return <div className="loader"></div>;
+        return <div className="loader">Loading quizzes...</div>;
     }
 
     if (error) {
@@ -72,44 +82,52 @@ function Leaderboard() {
     }
 
     return (
-        <div>
-            <h2>Select a Quiz</h2>
-            <div className="quiz-list">
-                <ul className="scrollable-list">
-                    {quizzes.map((quiz) => (
-                        <li key={quiz.id} onClick={() => handleQuizSelect(quiz.id)}>
-                            {quiz.title}
-                        </li>
-                    ))}
-                </ul>
-            </div>
+        <div className="l-wrapper">
+            <h2 id="leaderboard-title">Leaderboard</h2> {/* Added id here */}
+            <select
+                className="quiz-dropdown c-select"
+                onChange={(e) => handleQuizSelect(e.target.value)}
+                value={selectedQuizId || ""}
+            >
+            
+                {quizzes.map((quiz) => (
+                    <option key={quiz.id} value={quiz.id}>
+                        {quiz.title}
+                    </option>
+                ))}
+            </select>
+
             {selectedQuizId && (
-                <div>
+                <div className="leaderboard-container">
                     <h2>Leaderboard</h2>
                     {loadingLeaderboard ? (
-                        <div className="loader"></div>
+                        <div className="loader">Loading leaderboard...</div>
                     ) : (
-                        <table id="leaderboardTable">
-                            <thead>
-                                <tr>
-                                    <th>Rank</th>
-                                    <th>Username</th>
-                                    <th>Score</th>
-                                    <th>Quiz Title</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {leaderboard.map((entry) => (
-                                    <tr key={entry.id}>
-                                        <td>{entry.rank_position}</td>
-                                        <td>{entry.username}</td>
-                                        <td>{entry.score}</td>
-                                        <td>{entry.quiz_title}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        <div className="leaderboard">
+                            <div className="leaderboard-header">
+                                <span className="header-item">Place</span>
+                                <span className="header-item">Username</span>
+                                <span className="header-item">Score</span>
+                            </div>
+                            {leaderboard.map((entry, index) => (
+                                <div key={entry.username} className="leaderboard-card">
+                                    <span className="place">
+                                        {index < 3 ? (
+                                            <FontAwesomeIcon
+                                                icon={faMedal}
+                                                className={`medal-icon medal-${index + 1}`}
+                                            />
+                                        ) : (
+                                            index + 1
+                                        )}
+                                    </span>
+                                    <span className="username">{entry.username}</span>
+                                    <span className="score">{entry.score}</span>
+                                </div>
+                            ))}
+                        </div>
                     )}
+                   
                 </div>
             )}
         </div>
