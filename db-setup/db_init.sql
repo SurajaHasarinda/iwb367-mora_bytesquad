@@ -194,6 +194,22 @@ cross JOIN
 left JOIN 
     options opt ON qs.question_id = opt.question_id;
 
+---- view for leaderboard
+    CREATE OR REPLACE VIEW leaderboard_view AS
+SELECT
+    u.username,
+    q.id AS quiz_id,
+    q.title AS quiz_title,
+    qs.score,
+    RANK() OVER (PARTITION BY q.id ORDER BY qs.score DESC) AS rank_position
+FROM
+    scores qs
+JOIN
+    users u ON qs.user_id = u.id
+JOIN
+    quizzes q ON qs.quiz_id = q.id;
+
+
 
 -----------------------------Procedures--------------------------------
 

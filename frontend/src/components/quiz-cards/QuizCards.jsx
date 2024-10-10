@@ -3,6 +3,7 @@ import { Card, CardContent, Typography } from '@mui/material';
 import './QuizCards.css';
 import QuizIcon from '@mui/icons-material/Quiz';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const userId = 1; // TODO: Replace with actual user ID
 
@@ -29,6 +30,7 @@ const QuizCards = () => {
         }
     };
 
+    const navigate = useNavigate();
 
   useEffect(() => {
     const handleResize = () => {
@@ -53,6 +55,11 @@ const QuizCards = () => {
     getQuizData();
   }, []);
 
+  const selectQuiz = (quizId) => {
+    console.log('Selected quiz:', quizId);
+    navigate(`./quiz/${quizId}`); // Navigate to the selected quiz
+  }
+
   return (
     <div className="quiz-cards-container">
       {quizData.map((quiz) => (
@@ -60,11 +67,12 @@ const QuizCards = () => {
           className="quiz-card"
           variant="outlined" 
           key={quiz.quiz_id} 
+          onClick={() => { selectQuiz(quiz.quiz_id) }}
           style={{ 
             flex: `0 1 calc(${100 / gridSize}% - 20px)`, // 20px accounts for the margin
             margin: '20px',
             borderRadius: '15px',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', // Subtle shadow for depth
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' // Subtle shadow for depth
           }}
         >
           <CardContent style={{ textAlign: 'center' }}>

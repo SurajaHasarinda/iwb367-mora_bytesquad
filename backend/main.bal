@@ -5,42 +5,19 @@ import ballerina/time;
 import ballerinax/mysql;
 import ballerinax/mysql.driver as _;
 import ballerina/log;
-
-// import ballerina/lang.regexp;
-
-// to cofingure the database
-type DatabaseConfig record {|
-    string host;
-    int port;
-    string user;
-    string password;
-    string database;
-|};
+import ballerina/jwt;
 
 // get the database configuration from the Config.toml file
 configurable DatabaseConfig databaseConfig = ?;
 
 // create a new mysql client using the database configuration
 mysql:Client dbClient = check new (...databaseConfig);
+
 listener http:Listener authListener = new (8080);
 listener http:Listener quizListener = new (8081);
 listener http:Listener scoreListener = new (8082);
 
 //-------------------------------------------- Auth Service --------------------------------------------
-type User record {
-    readonly int id;
-    string userName;
-};
-
-type UserNotFound record {|
-    *http:NotFound;
-    ErrorDetails body;
-|};
-
-type UserPassword record {
-    string password;
-};
-
 @http:ServiceConfig {
     cors: {
         allowOrigins: ["*"]
@@ -133,11 +110,26 @@ service /auth on authListener {
             byte[] hashedPasswordBytes = crypto:hashSha256(password.toBytes());
             string hashedPassword = hashedPasswordBytes.toBase16();
 
+            jwt:IssuerConfig issuerConfig = {
+                username: username,
+                issuer: "Mora_ByteSquad",
+                audience: "QuizApp",
+                expTime: 3600,
+                signatureConfig: {
+                    config: {
+                        keyFile: "private.key",
+                        keyPassword: "Mora"
+                    }
+                }
+            };
+
+            string jwt = check jwt:issue(issuerConfig);
+
             // Compare the provided hashed password with the stored hashed password
             if (hashedPassword == storedHashedPassword) {
                 http:Response successResponse = new;
                 successResponse.statusCode = http:STATUS_OK; // 200 OK
-                successResponse.setPayload({"message": "Login successful!"});
+                successResponse.setPayload({"message": "Login successful!", "token": jwt});
                 check caller->respond(successResponse);
             } else {
                 http:Response invalidPasswordResponse = new;
@@ -156,37 +148,12 @@ service /auth on authListener {
 }
 
 //-------------------------------------------- Quiz Service --------------------------------------------
-
-type QuizQuestion record {
-    int id;
-    readonly string title;
-    readonly int question_id;
-    readonly string question_text;
-    string option_text;
-};
-
-type Quiz record {
-    int id;
-    string title;
-};
-
-type QuizWithScore record {
-    readonly int quiz_id;
-    string quiz_title;
-    string|int score;
-};
-
-type QuizSubmission record {
-    int quizId;
-    int userId;
-    map<string> answers;
-};
-
 @http:ServiceConfig {
     cors: {
         allowOrigins: ["*"]
     }
 }
+
 service /quiz on quizListener {
     // get all quizzes with user scores
     resource function get all/user/[int Userid]() returns QuizWithScore[]|error {
@@ -262,7 +229,6 @@ service /quiz on quizListener {
         } 
     }
     
-
    resource function get list() returns Quiz[]|error {
         // Create a stream to fetch quiz records
         stream<Quiz, sql:Error?> quizStream = dbClient->query(`SELECT id, title FROM quizzes`); // Adjust the SQL as necessary
@@ -281,33 +247,49 @@ service /quiz on quizListener {
         // Return the accumulated list of quizzes
         return quizzes;
     }
+
+
+   resource function get LeaderboardByQuizTitle/[int quizId]() returns LeaderboardEntry[]|error {
+    stream<LeaderboardEntry, sql:Error?> leaderboardStream = dbClient->query(
+        `SELECT username, quiz_id,quiz_title, score, rank_position 
+         FROM leaderboard_view 
+         WHERE quiz_id = ${quizId}`
+    );
+    
+    LeaderboardEntry[] leaderboard = [];
+    check from LeaderboardEntry entry in leaderboardStream
+        do {
+            leaderboard.push(entry);
+        };
+    check leaderboardStream.close();
+    return leaderboard;
+}
+
+ resource function get Quizzes() returns QuizInfo[]|error {
+    // Query to select the id and title from the quizzes table
+    stream<QuizInfo, sql:Error?> quizzesStream = dbClient->query(
+        `SELECT id, title 
+         FROM quizzes`
+    );
+
+    QuizInfo[] quizzes = [];
+    
+    // Iterate through the stream and collect results
+    check from QuizInfo quiz in quizzesStream
+        do {
+            quizzes.push(quiz);
+        };
+
+    // Close the stream after processing
+    check quizzesStream.close();
+    
+    return quizzes;
+}
+
+
   
 }
 //-------------------------------------------- Score Service --------------------------------------------
-
-type Score record {|
-    readonly int id;
-    @sql:Column {name: "user_id"}
-    readonly int userId;
-    @sql:Column {name: "quiz_id"}
-    readonly int quizId;
-    int score;
-    @sql:Column {name: "submitted_at"}
-    string submittedAt;
-|};
-
-type ErrorDetails record {
-    string message;
-    string details;
-    time:Utc timeStamp;
-};
-
-type ScoreNotFound record {|
-    *http:NotFound;
-    ErrorDetails body;
-|};
-
-
 @http:ServiceConfig {
     cors: {
         allowOrigins: ["*"]

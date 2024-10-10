@@ -62,8 +62,9 @@ const LoginSignupForm = () => {
 
         if (response.status === 200) {
           showMessage(response.data.message || "Login successful!", "success");
+          localStorage.setItem('token', response.data.token);
+          console.log(response.data);
           navigate('/user-dashboard');
-          // navigate('/quiz');
         } else {
           showMessage(response.data.message || "Login failed!", "error");
         }
