@@ -195,7 +195,7 @@ left JOIN
     options opt ON qs.question_id = opt.question_id;
 
 ---- view for leaderboard
-    CREATE OR REPLACE VIEW leaderboard_view AS
+CREATE VIEW leaderboard_view AS
 SELECT
     u.username,
     q.id AS quiz_id,
@@ -208,8 +208,6 @@ JOIN
     users u ON qs.user_id = u.id
 JOIN
     quizzes q ON qs.quiz_id = q.id;
-
-
 
 -----------------------------Procedures--------------------------------
 
@@ -246,7 +244,6 @@ BEGIN
     END IF;
 END $$
 DELIMITER ;
-    
 
 ------------------------------Functions--------------------------------
 

@@ -18,7 +18,7 @@ function App() {
         <Route path="/user-dashboard/*" element={<PrivateRoute><UserDashboard /></PrivateRoute>}> 
        
         </Route> */}
-         <Route path="leaderboard" element={<Leaderboard />} />
+         <Route path="/" element={<Leaderboard />} />
         
       </Routes>
     </Router>
