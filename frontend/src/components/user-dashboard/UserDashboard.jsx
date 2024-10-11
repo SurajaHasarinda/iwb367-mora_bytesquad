@@ -8,12 +8,14 @@ import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Logout from '@mui/icons-material/Logout';
+import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import './UserDashboard.css';
 
 import QuizCards from '../quiz-cards/QuizCards';
 import Quiz from '../quiz/Quiz';
 import UserProfile from '../user-profile/UserProfile';
+import Leaderboard from '../leader-board/Leaderboard';
 
 const username = localStorage.getItem('username');
 
@@ -56,6 +58,11 @@ export default function AccountMenu() {
   const gotoProfile = () => {
     handleClose();
     navigate(`./profile`);
+  };
+
+  const gotoLeaderboard = () => {
+    handleClose();
+    navigate(`./leaderboard`);
   };
 
   return (
@@ -114,6 +121,12 @@ export default function AccountMenu() {
             <MenuItem onClick={gotoProfile}>
               <Avatar /> Profile
             </MenuItem>
+            <MenuItem onClick={gotoLeaderboard}>
+              <ListItemIcon>
+                <LeaderboardIcon fontSize="small" />
+              </ListItemIcon>
+              Leaderboard
+            </MenuItem>
             <Divider />
             <MenuItem onClick={handleLogout}>
               <ListItemIcon>
@@ -127,6 +140,7 @@ export default function AccountMenu() {
       <Routes>
         <Route path="/" element={ <QuizCards />} />
         <Route path="/profile" element={<UserProfile />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="quiz/:quizId" element={<Quiz />} />
       </Routes>
       </div>
