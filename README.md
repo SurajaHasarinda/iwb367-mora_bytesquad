@@ -117,14 +117,10 @@ The **Online Quiz Portal** is a full-stack web application designed to allow use
 
 1. Fork the repository
 
-   ```bash
-   git clone https://github.com/SurajaHasarinda/iwb367-mora_bytesquad.git
-   ```
-
 2. Clone the repository to your local machine
 
    ```bash
-   git clone
+   git clone https://github.com/SurajaHasarinda/iwb367-mora_bytesquad.git
     ```
 3. Create a new branch for your changes
 
