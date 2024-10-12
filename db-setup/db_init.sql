@@ -1,5 +1,7 @@
 -- Active: 1725907957738@@127.0.0.1@3306@quiz_db
+
 -- Create the database
+DROP DATABASE IF EXISTS quiz_db;
 CREATE DATABASE IF NOT EXISTS quiz_db;
 
 -- Ensure to use the created database
@@ -9,20 +11,15 @@ USE quiz_db;
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL
-);
-
-CREATE TABLE admins (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL
+    password VARCHAR(255) NOT NULL,
+    role ENUM('user', 'admin') DEFAULT 'user'
 );
 
 CREATE TABLE quizzes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     created_by INT,
-    FOREIGN KEY (created_by) REFERENCES admins(id)
+    FOREIGN KEY (created_by) REFERENCES users(id)
 );
 
 CREATE TABLE questions (
@@ -52,15 +49,11 @@ CREATE TABLE scores (
 );
 
 -- Add some data to the tables
-INSERT INTO users (username, password) VALUES 
-('user1', 'password1'),
-('user2', 'password2'),
-('user3', 'password3');
-
--- Insert data into admins
-INSERT INTO admins (username, password) VALUES
-('admin1', 'adminpass1'),
-('admin2', 'adminpass2');
+INSERT INTO users (username, password, role) VALUES
+('user1', 'e606e38b0d8c19b24cf0ee3808183162ea7cd63ff7912dbb22b5e803286b4446', 'user'), -- password: user123
+('user3', 'password3', 'user'),
+('admin1', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'admin'), -- password: admin123
+('admin2', 'adminpass2', 'admin');
 
 -- Insert data into quizzes
 INSERT INTO quizzes (title, created_by) VALUES 
@@ -153,14 +146,14 @@ INSERT INTO options (question_id, option_number, option_text) VALUES
 
 -- Insert data into scores
 INSERT INTO scores (user_id, quiz_id, score) VALUES
-(1, 1, 2),    -- user1 took the Operating Systems Quiz and scored 2
-(1, 2, 1),    -- user1 took the Data Structures Quiz and scored 1
-(2, 1, 1),    -- user2 took the Operating Systems Quiz and scored 1
-(2, 3, 3),    -- user2 took the Computer Networks Quiz and scored 3
-(3, 4, 2),    -- user3 took the Database Management Systems Quiz and scored 2
-(3, 5, 1),    -- user3 took the Digital Logic Quiz and scored 1
-(1, 4, 3),    -- user1 took the DBMS Quiz and scored 3
-(2, 5, 1);    -- user2 took the Digital Logic Quiz and scored 1
+(1, 1, 20),    -- user1 took the Operating Systems Quiz and scored 2
+(1, 2, 60),    -- user1 took the Data Structures Quiz and scored 1
+(2, 1, 100),    -- user2 took the Operating Systems Quiz and scored 1
+(2, 3, 80),    -- user2 took the Computer Networks Quiz and scored 3
+(3, 4, 10),    -- user3 took the Database Management Systems Quiz and scored 2
+(3, 5, 0),    -- user3 took the Digital Logic Quiz and scored 1
+(1, 4, 90),    -- user1 took the DBMS Quiz and scored 3
+(2, 5, 100);    -- user2 took the Digital Logic Quiz and scored 1
 
 -- -----------------------------Views----------------------------------
 
@@ -194,8 +187,23 @@ cross JOIN
 left JOIN 
     options opt ON qs.question_id = opt.question_id;
 
+---- view for leaderboard
+CREATE VIEW leaderboard_view AS
+SELECT
+    u.username,
+    q.id AS quiz_id,
+    q.title AS quiz_title,
+    qs.score,
+    RANK() OVER (PARTITION BY q.id ORDER BY qs.score DESC) AS rank_position
+FROM
+    scores qs
+JOIN
+    users u ON qs.user_id = u.id
+JOIN
+    quizzes q ON qs.quiz_id = q.id;
 
------------------------------Procedures--------------------------------
+
+-- ---------------------------Procedures--------------------------------
 
 -- Create a procedure to create a new user
 DELIMITER $$
@@ -205,8 +213,8 @@ CREATE PROCEDURE CreateUser(
     IN p_password VARCHAR(255)
 )
 BEGIN
-    INSERT INTO users (username, password)
-    VALUES (p_username, p_password);
+    INSERT INTO users (username, password, role)
+    VALUES (p_username, p_password, 'user');
 END $$
 
 DELIMITER ;
@@ -230,9 +238,37 @@ BEGIN
     END IF;
 END $$
 DELIMITER ;
-    
 
-------------------------------Functions--------------------------------
+-- Create a procedure to add a new question to a quiz
+DELIMITER $$
+CREATE PROCEDURE AddQuestion(
+    IN p_quiz_id INT,
+    IN p_question_text TEXT,
+    IN p_correct_option INT,
+    IN p_option1 VARCHAR(255),
+    IN p_option2 VARCHAR(255),
+    IN p_option3 VARCHAR(255),
+    IN p_option4 VARCHAR(255)
+)
+BEGIN
+    DECLARE new_question_id INT;
+
+    -- Insert the question into the questions table
+    INSERT INTO questions (quiz_id, question_text, correct_option)
+    VALUES (p_quiz_id, p_question_text, p_correct_option);
+
+    -- Get the ID of the newly inserted question
+    SET new_question_id = LAST_INSERT_ID();
+
+    -- Insert the options for the question into the options table
+    INSERT INTO options (question_id, option_number, option_text)
+    VALUES (new_question_id, 1, p_option1),
+           (new_question_id, 2, p_option2),
+           (new_question_id, 3, p_option3),
+           (new_question_id, 4, p_option4);
+END $$
+DELIMITER ;
+-- ----------------------------Functions--------------------------------
 
 -- Create a function to check if the answer is correct
 DROP FUNCTION IF EXISTS CheckAnswer;
@@ -261,3 +297,29 @@ BEGIN
 END $$
 
 DELIMITER ;
+
+-- Function to get create a new quiz
+DROP FUNCTION IF EXISTS CreateQuiz;
+DELIMITER $$
+
+CREATE FUNCTION CreateQuiz(
+    p_title VARCHAR(255),
+    p_created_by INT
+)
+RETURNS INT
+DETERMINISTIC
+BEGIN
+    DECLARE result INT;
+
+    -- Check if the user creating the quiz is an admin
+    IF (SELECT role FROM users WHERE id = p_created_by) != 'admin' THEN
+        RETURN NULL; -- Return NULL or some other value to indicate failure
+    ELSE
+        INSERT INTO quizzes (title, created_by)
+        VALUES (p_title, p_created_by);
+
+        SET result = LAST_INSERT_ID(); -- Get the ID of the newly created quiz
+    END IF;
+
+    RETURN result;
+END $$

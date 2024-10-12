@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import "./LoginSignupForm.css";
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
+import { jwtDecode } from 'jwt-decode';
 
 const LoginSignupForm = () => {
   const [isLoginActive, setIsLoginActive] = useState(true); // login form is active by default
@@ -62,16 +63,23 @@ const LoginSignupForm = () => {
 
         if (response.status === 200) {
           showMessage(response.data.message || "Login successful!", "success");
+          // store token in local storage
           localStorage.setItem('token', response.data.token);
-          console.log(response.data);
+          // decode the token
+          const decodedToken = jwtDecode(response.data.token);
+          // store user data in local storage
+          localStorage.setItem('userId', decodedToken.id);
+          localStorage.setItem('username', decodedToken.username);
+          localStorage.setItem('role', decodedToken.role);
+          // navigate to user dashboard
           navigate('/user-dashboard');
+          // reload the page
+          window.location.reload();
         } else {
           showMessage(response.data.message || "Login failed!", "error");
         }
     } catch (error) {
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
         if (error.response.status === 401) {
           showMessage(error.response.data.message || "Invalid credentials!", "error");
         } else if (error.response.status === 404) {

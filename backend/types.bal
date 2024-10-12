@@ -13,6 +13,7 @@ public type DatabaseConfig record {|
 public type User record { 
     readonly int id; 
     string userName; 
+    string role;
 };
 
 public type UserNotFound record {| 
@@ -22,6 +23,10 @@ public type UserNotFound record {|
 
 public type UserPassword record { 
     string password; 
+};
+
+public type UserRole record { 
+    string role; 
 };
 
 public type QuizQuestion record { 
@@ -70,3 +75,29 @@ public type ScoreNotFound record {|
     *http:NotFound;
     ErrorDetails body;
 |};
+
+public type NewQuestion record {
+    string question;
+    string option1;
+    string option2;
+    string option3;
+    string option4;
+    string correctOption;
+};
+
+public type NewQuiz record {
+    string quizTitle;
+    NewQuestion[] questions;
+};
+
+public type LeaderboardEntry record {
+    string username;
+    string quiz_title;
+    int score;
+    int rank_position;
+};
+
+public type QuizInfo record {
+    int id;
+    string title;
+};

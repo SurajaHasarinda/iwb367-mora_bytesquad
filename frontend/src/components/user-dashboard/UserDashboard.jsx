@@ -8,13 +8,18 @@ import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Logout from '@mui/icons-material/Logout';
-import ChecklistIcon from '@mui/icons-material/Checklist';
-import './UserDashboard.css';
+import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import { Routes, Route, useNavigate } from 'react-router-dom';
+import {PrivateAdminRoute} from '../auth/PrivateRoute';
+import './UserDashboard.css';
 
 import QuizCards from '../quiz-cards/QuizCards';
 import Quiz from '../quiz/Quiz';
+import UserProfile from '../user-profile/UserProfile';
+import Leaderboard from '../leader-board/Leaderboard';
+import AddQuiz from '../add-quiz/AddQuiz';
 
+let username = localStorage.getItem('username') || 'User';
 
 function stringAvatar(name) {
   const initials = name.split(' ').map((word) => word[0]).join('').toUpperCase();
@@ -45,8 +50,22 @@ export default function AccountMenu() {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username');
+    localStorage.removeItem('role');
     handleClose();
     navigate(`/`);
+    window.location.reload();
+  };
+
+  const gotoProfile = () => {
+    handleClose();
+    navigate(`./profile`);
+  };
+
+  const gotoLeaderboard = () => {
+    handleClose();
+    navigate(`./leaderboard`);
   };
 
   return (
@@ -61,7 +80,7 @@ export default function AccountMenu() {
                 aria-haspopup="true"
                 aria-expanded={open ? 'true' : undefined}
               >
-                <Avatar {...stringAvatar('SH2001')} />
+                <Avatar {...stringAvatar(username)} />
               </IconButton>
             </Tooltip>
           </Box>
@@ -102,14 +121,14 @@ export default function AccountMenu() {
             transformOrigin={{ horizontal: 'right', vertical: 'top' }}
             anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
           >
-            <MenuItem onClick={handleClose}>
+            <MenuItem onClick={gotoProfile}>
               <Avatar /> Profile
             </MenuItem>
-            <MenuItem onClick={handleClose}>
+            <MenuItem onClick={gotoLeaderboard}>
               <ListItemIcon>
-                <ChecklistIcon fontSize="small" />
+                <LeaderboardIcon fontSize="small" />
               </ListItemIcon>
-              My score
+              Leaderboard
             </MenuItem>
             <Divider />
             <MenuItem onClick={handleLogout}>
@@ -123,7 +142,10 @@ export default function AccountMenu() {
       <div className='main-container'>
       <Routes>
         <Route path="/" element={ <QuizCards />} />
+        <Route path="/profile" element={<UserProfile />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="quiz/:quizId" element={<Quiz />} />
+        <Route path="/add-quiz" element={<PrivateAdminRoute><AddQuiz /></PrivateAdminRoute>} />
       </Routes>
       </div>
     </div>

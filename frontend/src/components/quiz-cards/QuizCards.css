@@ -11,3 +11,7 @@
     transform: scale(1.05); 
     transition: 0.3s ease, transform 0.3s ease;
 }
+
+.back-button {
+    margin-bottom: 30px;
+}
