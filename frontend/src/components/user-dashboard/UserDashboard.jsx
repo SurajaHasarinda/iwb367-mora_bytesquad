@@ -10,14 +10,16 @@ import Tooltip from '@mui/material/Tooltip';
 import Logout from '@mui/icons-material/Logout';
 import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import { Routes, Route, useNavigate } from 'react-router-dom';
+import {PrivateAdminRoute} from '../auth/PrivateRoute';
 import './UserDashboard.css';
 
 import QuizCards from '../quiz-cards/QuizCards';
 import Quiz from '../quiz/Quiz';
 import UserProfile from '../user-profile/UserProfile';
 import Leaderboard from '../leader-board/Leaderboard';
+import AddQuiz from '../add-quiz/AddQuiz';
 
-const username = localStorage.getItem('username');
+let username = localStorage.getItem('username') || 'User';
 
 function stringAvatar(name) {
   const initials = name.split(' ').map((word) => word[0]).join('').toUpperCase();
@@ -50,6 +52,7 @@ export default function AccountMenu() {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
     localStorage.removeItem('username');
+    localStorage.removeItem('role');
     handleClose();
     navigate(`/`);
     window.location.reload();
@@ -142,6 +145,7 @@ export default function AccountMenu() {
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="quiz/:quizId" element={<Quiz />} />
+        <Route path="/add-quiz" element={<PrivateAdminRoute><AddQuiz /></PrivateAdminRoute>} />
       </Routes>
       </div>
     </div>

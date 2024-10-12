@@ -23,7 +23,13 @@ The **Online Quiz Portal** is a full-stack web application designed to allow use
 
 ## 🛠️ Technologies Used
 
-- **Frontend**: Next.js (with TypeScript support)
+<p>
+  <a href="https://skillicons.dev">
+    <img src="https://skillicons.dev/icons?i=js,react,mysql,materialui" />
+  </a>
+</p>
+
+- **Frontend**: React.js
 - **Backend**: Ballerina
 - **Database**: MySQL for storing user data, quizzes, questions, and scores
 - **Authentication**: 🔑 JWT (JSON Web Tokens) for secure authentication
@@ -47,7 +53,7 @@ The **Online Quiz Portal** is a full-stack web application designed to allow use
 3. Start the development server:
 
    ```bash
-    npm run dev
+    npm start
     ```
 4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
@@ -84,9 +90,6 @@ The **Online Quiz Portal** is a full-stack web application designed to allow use
 
       ```toml
       # Configuration file for "backend"
-      # How to use see:
-      # https://ballerina.io/learn/provide-values-to-configurable-variables/#provide-via-toml-syntax
-
 
       [databaseConfig]	# Type of OBJECT
       database = "db_name"
@@ -95,6 +98,17 @@ The **Online Quiz Portal** is a full-stack web application designed to allow use
       host = "localhost"
       port = 3306
       ```
+---
+
+## 📝 Test Data
+
+- **Admin Credentials**:
+  - **Username**: admin1
+  - **Password**: admin123
+
+- **User Credentials**:
+   - **Username**: user1
+   - **Password**: user123
 ---
 
 ## 👩‍💻 How to Contribute
@@ -126,5 +140,19 @@ The **Online Quiz Portal** is a full-stack web application designed to allow use
    git push origin feature/branch-name
    ```  
 6. Create a pull request
+---
 
+## 👨🏻‍💻 Team Members (Mora_ByteSquad 🦈)
 
+- [Rashmika Rathnayaka](https://github.com/rashG1)
+- [Suraja Hasarinda](https://github.com/SurajaHasarinda)
+- [Nuwantha Ranaweera](https://github.com/nuwaran)
+---
+
+## 📸 Screenshots
+
+![Screenshot-1](./Screenshots/Screenshot-1.png)
+
+![Screenshot-2](./Screenshots/Screenshot-2.png)
+
+![Screenshot-3](./Screenshots/Screenshot-3.png)

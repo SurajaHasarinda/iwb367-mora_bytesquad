@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import "./LoginSignupForm.css";
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
+import { jwtDecode } from 'jwt-decode';
 
 const LoginSignupForm = () => {
   const [isLoginActive, setIsLoginActive] = useState(true); // login form is active by default
@@ -51,18 +52,6 @@ const LoginSignupForm = () => {
     setSnackbarOpen(false);
   };
 
-  const fetchUser = async () => {
-    try {
-      const response = await axios.get(`http://localhost:8080/auth/user/${username}`);
-      // store user data in local storage
-      localStorage.setItem('userId', response.data.id);
-      localStorage.setItem('username', response.data.userName);
-      window.location.reload(); // reload the page
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-    }
-  };
-
   // Handle login
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -74,14 +63,18 @@ const LoginSignupForm = () => {
 
         if (response.status === 200) {
           showMessage(response.data.message || "Login successful!", "success");
-          
+          // store token in local storage
           localStorage.setItem('token', response.data.token);
-
-          // fetch user data
-          fetchUser();
-
-          console.log(response.data);
+          // decode the token
+          const decodedToken = jwtDecode(response.data.token);
+          // store user data in local storage
+          localStorage.setItem('userId', decodedToken.id);
+          localStorage.setItem('username', decodedToken.username);
+          localStorage.setItem('role', decodedToken.role);
+          // navigate to user dashboard
           navigate('/user-dashboard');
+          // reload the page
+          window.location.reload();
         } else {
           showMessage(response.data.message || "Login failed!", "error");
         }

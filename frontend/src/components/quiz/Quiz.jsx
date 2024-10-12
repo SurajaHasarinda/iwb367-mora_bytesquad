@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Button from '@mui/material/Button';
 import './Quiz.css';
 import ScoreCard from '../score/ScoreCard';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 
 const UserID = parseInt(localStorage.getItem('userId'), 10);
 
@@ -20,6 +23,12 @@ const QuizPage = () => {
 
     const quizIdInt = parseInt(quizId, 10); // Convert quizId to integer
 
+    const navigate = useNavigate();
+    
+    const goBack = () => {
+        navigate('/user-dashboard');
+    };
+
     useEffect(() => {
         const fetchQuiz = async () => {
             try {
@@ -28,7 +37,6 @@ const QuizPage = () => {
                     throw new Error('Failed to fetch quiz data');
                 }
                 const data = await response.json();
-                console.log('Fetched quiz data:', data); // Log fetched quiz data
 
                 if (data.length > 0) {
                     setQuizTitle(data[0].title);
@@ -133,61 +141,78 @@ const QuizPage = () => {
     }
 
     return (
-        <div className="quiz-container">
-            <h1 className="quiz-title">{quizTitle || 'Quiz'}</h1>
-            {questions.length === 0 ? (
-                <p>No questions available for this quiz.</p>
-            ) : (
-                <div key={currentQuestion.question_id} className="question">
-                    <h4 className="question-text">{currentQuestion.question_text}</h4>
-                    <div className="options">
-                        {currentQuestion.options.map((option, index) => {
-                            const isSelected = selectedOptions[currentQuestion.question_id] === option;
-                            return (
-                                <button
-                                    key={index}
-                                    className={`option-button ${isSelected ? 'selected' : ''}`}
-                                    onClick={() => handleOptionClick(currentQuestion.question_id, option)}
-                                >
-                                    <span className="option-icon">
-                                        {isSelected && <span></span>}
-                                    </span>
-                                    <span className="option-text">{option}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-            <div className="navigation-buttons">
-            <Button 
-                    variant="contained" 
-                    color="primary" 
-                    onClick={handlePreviousQuestion} 
-                    disabled={currentQuestionIndex === 0}
-                    style={{ marginRight: '10px' }}
-                >
-                    Previous
-            </Button>
-
-            {/* Conditionally render Next or Submit Button */}
-            {currentQuestionIndex === questions.length - 1 ? (
-                <Button 
-                    variant="contained" 
-                    color="secondary" 
-                    onClick={handleSubmitQuiz}
-                >
-                    Submit Quiz
-                </Button>
+        <div>
+            <div className="quiz-container">
+                <h1 className="quiz-title">{quizTitle || 'Quiz'}</h1>
+                {questions.length === 0 ? (
+                    <p>No questions available for this quiz.</p>
                 ) : (
-                <Button 
-                    variant="contained" 
-                    color="primary" 
-                    onClick={handleNextQuestion}
-                >
-                    Next
-                </Button>
+                    <div key={currentQuestion.question_id} className="question">
+                        <h4 className="question-text">{currentQuestion.question_text}</h4>
+                        <div className="options">
+                            {currentQuestion.options.map((option, index) => {
+                                const isSelected = selectedOptions[currentQuestion.question_id] === option;
+                                return (
+                                    <button
+                                        key={index}
+                                        className={`option-button ${isSelected ? 'selected' : ''}`}
+                                        onClick={() => handleOptionClick(currentQuestion.question_id, option)}
+                                    >
+                                        <span className="option-icon">
+                                            {isSelected && <span></span>}
+                                        </span>
+                                        <span className="option-text">{option}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
                 )}
+                <div className="navigation-buttons">
+                <Button 
+                        variant="contained" 
+                        color="primary" 
+                        onClick={handlePreviousQuestion} 
+                        disabled={currentQuestionIndex === 0}
+                        style={{ marginRight: '10px' }}
+                    >
+                        Previous
+                </Button>
+
+                {/* Conditionally render Next or Submit Button */}
+                {currentQuestionIndex === questions.length - 1 ? (
+                    <Button 
+                        variant="contained" 
+                        color="secondary" 
+                        onClick={handleSubmitQuiz}
+                    >
+                        Submit Quiz
+                    </Button>
+                    ) : (
+                    <Button 
+                        variant="contained" 
+                        color="primary" 
+                        onClick={handleNextQuestion}
+                    >
+                        Next
+                    </Button>
+                    )}
+                </div>
+            </div>
+            <div className="back-button">
+                <Tooltip title="Go Back">
+                <IconButton
+                    color="primary"
+                    sx={{
+                        color: 'white',
+                        backgroundColor: '#695CFE',
+                        ':hover': { backgroundColor: '#5648CC' },
+                    }}
+                    onClick={goBack}
+                >
+                    <ArrowBackIcon fontSize="large" />
+                </IconButton>
+                </Tooltip>
             </div>
         </div>
     );

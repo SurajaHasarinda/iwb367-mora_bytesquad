@@ -21,7 +21,6 @@ function stringAvatar(name) {
     };
 }
 
-// Profile page component
 const UserProfile = () => {
     const [quizzes, setQuizzes] = useState([
         {
@@ -45,7 +44,6 @@ const UserProfile = () => {
                     quizName: quiz.quiz_title,
                     score: quiz.score,
                 }));
-            console.log(quizData);
             setQuizzes(quizData);
         } catch (error) {
             console.error('Error fetching quiz data:', error);
@@ -61,11 +59,12 @@ const UserProfile = () => {
             <Box>
                 <Card
                     sx={{
-                        width: 500,
+                        width: '500px',
                         padding: '30px',
                         borderRadius: '15px',
                         backgroundColor: '#FFFFFF',
                         textAlign: 'center',
+                        margin: '50px auto 0',
                     }}
                 >
                     <Box display="flex" justifyContent="center" alignItems="center" mt={2}>

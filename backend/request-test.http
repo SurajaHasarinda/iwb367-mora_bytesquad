@@ -44,7 +44,7 @@ GET http://localhost:8082/quizscore/score/user/1/quiz/2
 GET http://localhost:8080/auth/users
 
 ### Get specific user
-GET http://localhost:8080/auth/user/Hasarinda
+GET http://localhost:8080/auth/user/admin1
 
 ### Get all quizzes with user scores
 GET http://localhost:8081/quiz/all/user/1

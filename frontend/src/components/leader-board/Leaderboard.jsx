@@ -113,7 +113,7 @@ function Leaderboard() {
     return (
         <div className="leaderboard">
             <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" minHeight="100vh">
-                <Box p={3} display="flex" width="400px" flexDirection="column" alignItems="center" bgcolor="white" borderRadius={3} boxShadow={3}>
+                <Box p={3} display="flex" width="500px" flexDirection="column" alignItems="center" bgcolor="white" borderRadius={3} boxShadow={3}>
                     <Box
                         display="flex"
                         justifyContent="center"
@@ -137,7 +137,7 @@ function Leaderboard() {
                             <MenuItem value="" disabled>
                                 Select Quiz
                             </MenuItem>
-                            
+
                             {quizzes.map((quiz) => (
                                 <MenuItem key={quiz.id} value={quiz.id}>
                                     {quiz.title}
