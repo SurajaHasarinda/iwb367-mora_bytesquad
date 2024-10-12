@@ -2,6 +2,8 @@
 
 ## 🌟 Project Description
 
+This is our project for the hackathon **Innovate With Ballerina 2024** organized by `WSO2` and `IEEE Student Branch of University of Moratuwa`. 
+
 The **Online Quiz Portal** is a full-stack web application designed to allow users to take quizzes and view their results. The platform supports user registration, login, and separate privileges for users and administrators. Administrators can create quizzes, while users can attempt quizzes and review their scores.
 
 ---
